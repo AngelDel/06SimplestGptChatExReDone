@@ -15,6 +15,8 @@ app.get('/', (req, res) => {
   //res.send('Hello, world from the server!');
 });
 
+const OPENAI_API_KEY_VALUE = readFileContents("OPENAI_API_KEY");
+
 app.get('/my-gpt-endpoint/:message', async (req, res) => {
   
   const myText = req.params.message;
@@ -26,7 +28,7 @@ app.get('/my-gpt-endpoint/:message', async (req, res) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                'Authorization': `Bearer ${OPENAI_API_KEY_VALUE}`,
             },
             body: JSON.stringify({
                 model: 'gpt-4',
@@ -73,7 +75,6 @@ function readFileContents(fileName) { // to use to extract open ai api from its 
 const PORT = process.env.PORT || 3000;
 
 console.log(`Hello from the server`);
-console.log(`Fake secret: ` + readFileContents("FAKE_SECRET"));
 
 // Start the server
 app.listen(PORT, () => {
