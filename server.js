@@ -44,13 +44,14 @@ app.get('/my-gpt-endpoint/:message', async (req, res) => {
             const data = await openAiResponse.json();
             openAiResponseToShow = data.choices[0].message.content;
         } else {
-          openAiResponseToShow = 'Error: Unable to process your request.';
+          const data = await openAiResponse.json();
+          openAiResponseToShow = 'Error: Unable to process your request 1. Open AI response: ' + JSON.stringify(data);
         }
     } catch (error) {
         console.error(error);
-        openAiResponseToShow = 'Error: Unable to process your request.';
+        openAiResponseToShow = 'Error: Unable to process your request 2. Error: ' +JSON.stringify(error);
     }
-  }
+  }  
 
   // Send the response to the client
   res.send(openAiResponseToShow);
@@ -60,6 +61,7 @@ app.get('/my-gpt-endpoint/:message', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 console.log(`Hello from the server`);
+console.log(`Fake secret: ` + process.env.FAKE_SECRET);
 
 // Start the server
 app.listen(PORT, () => {
