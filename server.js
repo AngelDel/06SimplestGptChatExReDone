@@ -57,14 +57,27 @@ app.get('/my-gpt-endpoint/:message', async (req, res) => {
   res.send(openAiResponseToShow);
 });
 
+function readFileContents(fileName) { // to use to extract open ai api from its file
+  
+  const fs = require('node:fs');
+
+  try {
+    const data = fs.readFileSync(fileName, 'utf8');    
+    return data;
+  } catch (err) {
+    console.error(err);
+  }
+}
+
 // Define the port for the server to listen on
 const PORT = process.env.PORT || 3000;
 
 console.log(`Hello from the server`);
-console.log(`Fake secret: ` + process.env.FAKE_SECRET);
+console.log(`Fake secret: ` + readFileContents("FAKE_SECRET"));
 
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log('Go to http://localhost:' + PORT)
 });
+
