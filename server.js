@@ -14,6 +14,10 @@ app.get('/', (req, res) => {
   //res.send('Hello, world from the server!');
 });
 
+app.get('/my-gpt-endpoint', (req, res) => {
+  res.send('Response by chat gpt');  
+});
+
 // Define the port for the server to listen on
 const PORT = process.env.PORT || 3000;
 
