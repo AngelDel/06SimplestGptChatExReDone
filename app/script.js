@@ -2,6 +2,8 @@
     'Authorization': `Bearer ${OPENAI_API_KEY}`
 };*/
 
+// Not part of the endpoont, only part of the  original project
+
 console.log('hello world from the script js file!');
 
 const form = document.getElementById('chat-form');
