@@ -4,7 +4,11 @@ const path = require('path'); // Added to handle file paths
 require('dotenv').config() // For using environment variables
 
 // Create an instance of Express
-const app = express();
+const app = express();	
+
+// Add body-parser middleware
+// (using equivalent functionality to 'body-parser' -another module that you'd have to install- but within express)
+app.use(express.json()); 
 
 // Serve static files from the app directory
 app.use(express.static(path.join(__dirname, 'app'))); // Added to serve static files
@@ -17,9 +21,12 @@ app.get('/', (req, res) => {
 
 const OPENAI_API_KEY_VALUE = readFileContents("OPENAI_API_KEY");
 
-app.get('/my-gpt-endpoint/:message', async (req, res) => {
+// Use Post instead of Get
+  // Both in client and in server
+  // (F, gpt/claude) For reasons of Data length, Special characters & Security
+app.post('/my-gpt-endpoint/:message', async (req, res) => {
   
-  const myText = req.params.message;
+  const myText = req.body.message; // access message from request body
   let openAiResponseToShow = '';
 
   if (myText) {
