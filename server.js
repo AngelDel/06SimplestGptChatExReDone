@@ -2,13 +2,13 @@
 const express = require('express');
 const path = require('path'); // Added to handle file paths
 require('dotenv').config() // For using environment variables
+const bodyParser = require('body-parser'); // Added for parsing JSON request bodies (needed for Post instead of get)
 
 // Create an instance of Express
 const app = express();	
 
-// Use express's built-in JSON parsing middleware
-// (using equivalent functionality to 'body-parser' -another module that you'd have to install- but within express)
-app.use(express.json()); 
+// Add body-parser middleware
+app.use(bodyParser.json()); 
 
 // Serve static files from the app directory
 app.use(express.static(path.join(__dirname, 'app'))); // Added to serve static files
@@ -16,6 +16,7 @@ app.use(express.static(path.join(__dirname, 'app'))); // Added to serve static f
 // Define a route
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'app', 'index.html')); // Changed to send the HTML file
+  res.send('Hello, world from the server!');
 });
 
 const OPENAI_API_KEY_VALUE = readFileContents("OPENAI_API_KEY");
@@ -23,12 +24,11 @@ const OPENAI_API_KEY_VALUE = readFileContents("OPENAI_API_KEY");
 // Use Post instead of Get
   // Both in client and in server
   // (F, gpt/claude) For reasons of Data length, Special characters & Security
-// Also ensure route below matches exactly with my (unity) client's endpoint
-app.post('/my-gpt-endpoint', async (req, res) => {
+app.post('/my-gpt-endpoint/:message', async (req, res) => {
   
-  console.log("## req.body: " + req.body); // Log the request body
-  
-  const myText = req.body.message; // access message from request body
+  console.log("## req.params: " + req.params); // Log the request body
+
+  const myText = req.params.message; // access message from request body
   let openAiResponseToShow = '';
 
   if (myText) {
