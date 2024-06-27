@@ -27,7 +27,9 @@ const OPENAI_API_KEY_VALUE = readFileContents("OPENAI_API_KEY");
 app.post('/my-gpt-endpoint', async (req, res) => {
   
   console.log("## req.body 1: " + req.body); // Log the request body
-  console.log("## req.body 2: " + JSON.stringify(req.body)); // Log the request body
+  console.log("## req.body 2a: message (1)" + JSON.stringify(req.body));
+  console.log("## req.body 2b: message (2)" + JSON.stringify(req.body.message));
+  console.log("## req.body 3: platformSentFrom: " + req.body.platformSentFrom);
   
   const myText = req.body.message; // access message from request body
   let openAiResponseToShow = '';
