@@ -25,11 +25,13 @@ const OPENAI_API_KEY_VALUE = readFileContents("OPENAI_API_KEY");
   // (F, gpt/claude) For reasons of Data length, Special characters & Security
 // Also ensure route below matches exactly with my (unity) client's endpoint
 app.post('/my-gpt-endpoint', async (req, res) => {
-  
-  console.log("## req.body- all  1: " + req.body); // Log the request body
-  console.log("## req.body - all 2: " + JSON.stringify(req.body));
+    
+  console.log("## req received --------------------");
+  //console.log("## req.body- all  1: " + req.body); // Log the request body
+  //console.log("## req.body - all 2: " + JSON.stringify(req.body));
   console.log("## req.body - message: " + JSON.stringify(req.body.message));
   console.log("## req.body - sPlatformSentFrom: " + req.body.sPlatformSentFrom);
+  console.log("## ---------------------------------");
   
   const myText = req.body.message; // access message from request body
   let openAiResponseToShow = '';
