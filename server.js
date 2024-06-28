@@ -10,8 +10,8 @@ const app = express();
 // CORS
 // A Otherwise requests from a browser don';'t work
 // Configuration
-const corsOptions = {
-  origin: '*', // This allows all origins. TODO: In production, specify allowed origins ONLY!
+const corsOptions = {  
+  origin: process.env.ALLOWED_ORIGINS.split(','), // Specify the ONLY origins allowed
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
