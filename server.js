@@ -2,9 +2,28 @@
 const express = require('express');
 const path = require('path'); // Added to handle file paths
 require('dotenv').config() // For using environment variables
+const cors = require('cors'); // Import cors package
 
 // Create an instance of Express
 const app = express();	
+
+// CORS
+// A Otherwise requests from a browser don';'t work
+// Configuration
+const corsOptions = {
+  origin: '*', // This allows all origins. TODO: In production, specify allowed origins ONLY!
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+// Use its middleware
+app.use(cors(corsOptions));
+// Add custom middleware to ensure cors headers
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  next();
+});
 
 // Use express's built-in JSON parsing middleware
 // (using equivalent functionality to 'body-parser' -another module that you'd have to install- but within express)
