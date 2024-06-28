@@ -10,8 +10,10 @@ const app = express();
 // CORS
 // A Otherwise requests from a browser don';'t work
 // Configuration
+const ALLOWED_ORIGIN_DOMAIN = readFileContents("ALLOWED_ORIGIN");
+
 const corsOptions = {  
-  origin: process.env.ALLOWED_ORIGINS.split(','), // Specify the ONLY origins allowed
+  origin: [ALLOWED_ORIGIN_DOMAIN], // Specify the ONLY origins allowed
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
