@@ -45,7 +45,7 @@ const OPENAI_API_KEY_VALUE = readFileContents("OPENAI_API_KEY");
   // Both in client and in server
   // (F, gpt/claude) For reasons of Data length, Special characters & Security
 // Also ensure route below matches exactly with my (unity) client's endpoint
-app.post('/my-gpt-endpoint', async (req, res) => {
+app.post('/my-gpt-endpoint', async (req, res, next) => { // Error handling as per Fer's system (1/3)
     
   console.log("## req received --------------------");
   console.log("## req.body - message: " + JSON.stringify(req.body.message));
@@ -87,13 +87,25 @@ app.post('/my-gpt-endpoint', async (req, res) => {
         openAiResponseToShow = 'Error: Unable to process your request 2. Error: ' +JSON.stringify(error);
     }
 
+    // Send the response to the client
+    res.send(openAiResponseToShow);
+
   } else {
     // Error handling if message missing
-    openAiResponseToShow = 'Error: No message provided in the request body';   
-  }  
+    // May also send an error message to client!
 
-  // Send the response to the client
-  res.send(openAiResponseToShow);
+    // Error handling as per Fer's system (2/3)
+    const error = new Error('Error: No message provided in the request body');
+    error.status = 400;
+    next(error); // should send execution to "handler" below
+  }  
+});
+
+// Error handling as per Fer's system (3/3)
+// A: handles the "next" calls from errors above
+app.use((err, req, res, next) => {
+  console.log("Inside error -Next- middleware for handling errors");
+  res.status(err.status || 500).json({ error: err.message });   
 });
 
 function readFileContents(fileName) { // to use to extract open ai api from its file
