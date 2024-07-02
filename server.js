@@ -8,7 +8,7 @@ const cors = require('cors'); // Import cors package
 const app = express();	
 
 // CORS
-// A Otherwise requests from a browser don';'t work
+// A Otherwise requests from a browser don't work
 // Configuration
 const ALLOWED_ORIGIN_DOMAIN = readFileContents("ALLOWED_ORIGIN");
 
