@@ -115,6 +115,8 @@ console.log(`Hello from the server`);
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log('Go to http://localhost:' + PORT)
+  console.log(`Server is running on port ${PORT}`);  
+  if (process.env.HOST === 'localhost' || process.env.HOST === undefined) {    
+    console.log('Local server: Go to http://localhost:' + PORT)
+  }  
 });
