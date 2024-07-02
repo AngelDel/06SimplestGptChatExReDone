@@ -48,8 +48,6 @@ const OPENAI_API_KEY_VALUE = readFileContents("OPENAI_API_KEY");
 app.post('/my-gpt-endpoint', async (req, res) => {
     
   console.log("## req received --------------------");
-  //console.log("## req.body- all  1: " + req.body); // Log the request body
-  //console.log("## req.body - all 2: " + JSON.stringify(req.body));
   console.log("## req.body - message: " + JSON.stringify(req.body.message));
   console.log("## req.body - sPlatformSentFrom: " + req.body.sPlatformSentFrom);
   console.log("## ---------------------------------");
