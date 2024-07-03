@@ -29,7 +29,7 @@ function setupMiddleware() {
   // use
   app.use(cors(corsOptions));
 
-  //??????????????????????????????????????????
+  // Apply additional CORS headers as a fallback or for fine-grained control
   app.use(addCustomCorsHeaders);
 
   // Use express's built-in JSON parsing middleware
@@ -83,7 +83,10 @@ async function handleGptEndpoint(req, res, next) { // Error handling as per Fer'
     const openAiResponse = await callOpenAI(myText);
     res.send(openAiResponse); // Send the response to the client
   } catch (error) { // Error handling as per Fer's system (2/3)
-    next(error); // should send execution to "handler" below // ?????????????????? or error.message cSonnet)?
+    // Signals Express that an error occurred.
+    // (Express will then invoke the appropriate error-handling middleware
+    // when finished with the current middleware stack).
+    next(error);
   }
 }
 
@@ -147,7 +150,8 @@ function startServer() {
   setupRoutes();
   app.use(errorHandler);
 
-  // Start server (but doesn't block execution, does it asynchronously)
+  // Start the server and listen for incoming connections
+  // (An asynchronous operation; the callback runs once the server is ready)
   app.listen(PORT, () => {
     console.log(`Env mode detected: ${process.env.NODE_ENV}`);
     console.log(`Server is running on port ${PORT}`);
