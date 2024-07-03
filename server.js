@@ -4,6 +4,12 @@ const path = require('path'); // Added to handle file paths
 require('dotenv').config() // For using environment variables
 const cors = require('cors'); // Import cors package
 
+
+// temp for debug
+const fs = require('fs');
+console.log('.env file exists:', fs.existsSync(path.join(process.cwd(), '.env')));
+
+
 // Create an instance of Express
 const app = express();	
 
@@ -128,7 +134,10 @@ console.log(`Hello from the server`);
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);  
-  if (process.env.HOST === 'localhost' || process.env.HOST === undefined) {    
+
+  console.log(`Node env value from env file: ${process.env.NODE_ENV}`);
+
+  if (process.env.NODE_ENV !== 'production') {    
     console.log('Local server: Go to http://localhost:' + PORT)
   }  
 });
