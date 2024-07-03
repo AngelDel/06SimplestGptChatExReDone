@@ -1,17 +1,19 @@
-// Import required modules
+// 1. IMPORT REQUIRED MODULES
 const express = require('express');
 const path = require('path'); // Added to handle file paths
 require('dotenv').config() // For using environment variables
 const cors = require('cors'); // Import cors package
 const fs = require('fs');
 
-//-
-
+// 2. VARIABLE DECLARATIONS AND ASSIGNMENTS
 const app = express(); // Create an instance of Express
 const PORT = process.env.PORT || 3000; // Define the port for the server to listen on 
 
-//-
+// 3. MAIN EXECUTION
+console.log(`Hello from the server`); // Executed when the file is first run
+startServer();
 
+// 4. FUNCTION DEFINITIONS
 function setupMiddleware() {
   // CORS (1/2)
   // A: Otherwise requests from a browser don't work
@@ -145,6 +147,7 @@ function startServer() {
   setupRoutes();
   app.use(errorHandler);
 
+  // Start server (but doesn't block execution, does it asynchronously)
   app.listen(PORT, () => {
     console.log(`Env mode detected: ${process.env.NODE_ENV}`);
     console.log(`Server is running on port ${PORT}`);
@@ -154,6 +157,3 @@ function startServer() {
     }
   });
 }
-
-console.log(`Hello from the server`);
-startServer();
