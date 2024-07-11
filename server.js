@@ -77,8 +77,6 @@ async function handleLlpEndpoint(req, res, next) { // Error handling as per Fer'
     const llpProvider = req.body.sLlpProvider;
     const myModel = req.body.model;
 
-    console.log("llpProvider from json: '" + llpProvider + "'");
-
     // Error handling
     // May also send an error message to client
     if (!myText) {
@@ -104,8 +102,6 @@ async function handleLlpEndpoint(req, res, next) { // Error handling as per Fer'
 
     let llpResponse = "";
     
-    console.log("LLP_PROVIDERS.OPEN_AI: " + LLP_PROVIDERS.OPEN_AI);
-
     switch (llpProvider) {
       case LLP_PROVIDERS.OPEN_AI:          
           llpResponse = await callOpenAI(myText, myModel);
