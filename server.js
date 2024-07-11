@@ -60,10 +60,10 @@ function setupRoutes() {
   // Use Post instead of Get (both in client and in server)
   // (F, gpt/claude) For reasons of Data length, Special characters & Security
   // Also ensure route below matches exactly with my (unity) client's endpoint
-  app.post('/my-llp-endpoint', handleGptEndpoint);
+  app.post('/my-llp-endpoint', handleLlpEndpoint);
 }
 
-async function handleGptEndpoint(req, res, next) { // Error handling as per Fer's system -"Next"- (1/3)
+async function handleLlpEndpoint(req, res, next) { // Error handling as per Fer's system -"Next"- (1/3)
   console.log("## req received --------------------");
   console.log("## req.body - message: " + JSON.stringify(req.body.message));
   console.log("## req.body - sPlatformSentFrom: " + req.body.sPlatformSentFrom);
@@ -80,8 +80,8 @@ async function handleGptEndpoint(req, res, next) { // Error handling as per Fer'
       throw validationError;
     }
 
-    const openAiResponse = await callOpenAI(myText);
-    res.send(openAiResponse); // Send the response to the client
+    const llpResponse = await callOpenAI(myText);
+    res.send(llpResponse); // Send the response to the client
   } catch (error) { // Error handling as per Fer's system (2/3)
     // Signals Express that an error occurred.
     // (Express will then invoke the appropriate error-handling middleware
