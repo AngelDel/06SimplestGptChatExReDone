@@ -67,20 +67,30 @@ async function handleLlpEndpoint(req, res, next) { // Error handling as per Fer'
   console.log("## req received --------------------");
   console.log("## req.body - message: " + JSON.stringify(req.body.message));
   console.log("## req.body - sPlatformSentFrom: " + req.body.sPlatformSentFrom);
+  console.log("## req.body - model: " + req.body.model);
   console.log("## ---------------------------------");
 
-  try {
+  try {    
     const myText = req.body.message; // Access message from request body
-    if (!myText) {
+    const myModel = req.body.model;
 
-      // Error handling if message missing
+    // Error handling
     // May also send an error message to client
+    if (!myText) {
+      // if message missing    
       const validationError = new Error('No message provided in the request body');
       validationError.status = 400;
       throw validationError;
     }
 
-    const llpResponse = await callOpenAI(myText);
+    if (!myModel) {
+      // if model  missing    
+      const validationError = new Error('No model provided in the request body');
+      validationError.status = 400;
+      throw validationError;
+    }
+
+    const llpResponse = await callOpenAI(myText, myModel);
     res.send(llpResponse); // Send the response to the client
   } catch (error) { // Error handling as per Fer's system (2/3)
     // Signals Express that an error occurred.
@@ -90,7 +100,7 @@ async function handleLlpEndpoint(req, res, next) { // Error handling as per Fer'
   }
 }
 
-async function callOpenAI(text) {
+async function callOpenAI(text, model) {
   const OPENAI_API_KEY_VALUE = readFileContents("OPENAI_API_KEY");
   
   try {
@@ -101,7 +111,7 @@ async function callOpenAI(text) {
         'Authorization': `Bearer ${OPENAI_API_KEY_VALUE}`,
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: model,
         messages: [{ role: 'user', content: text }],
         temperature: 1.0,
         top_p: 0.7,
