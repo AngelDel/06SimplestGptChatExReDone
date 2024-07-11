@@ -4,6 +4,7 @@ const path = require('path'); // Added to handle file paths
 require('dotenv').config() // For using environment variables
 const cors = require('cors'); // Import cors package
 const fs = require('fs');
+const LLP_PROVIDERS = require('./llpProviders'); // for which AI provider used
 
 // 2. VARIABLE DECLARATIONS AND ASSIGNMENTS
 const app = express(); // Create an instance of Express
@@ -67,31 +68,55 @@ async function handleLlpEndpoint(req, res, next) { // Error handling as per Fer'
   console.log("## req received --------------------");
   console.log("## req.body - message: " + JSON.stringify(req.body.message));
   console.log("## req.body - sPlatformSentFrom: " + req.body.sPlatformSentFrom);
+  console.log("## req.body - llp provider: " + req.body.sLlpProvider);
   console.log("## req.body - model: " + req.body.model);
   console.log("## ---------------------------------");
 
   try {    
     const myText = req.body.message; // Access message from request body
+    const llpProvider = req.body.sLlpProvider;
     const myModel = req.body.model;
+
+    console.log("llpProvider from json: '" + llpProvider + "'");
 
     // Error handling
     // May also send an error message to client
     if (!myText) {
-      // if message missing    
+      // message missing    
       const validationError = new Error('No message provided in the request body');
       validationError.status = 400;
       throw validationError;
     }
 
-    if (!myModel) {
-      // if model  missing    
-      const validationError = new Error('No model provided in the request body');
+    if (!llpProvider) {
+      // llp provider missing    
+      const validationError = new Error('No llp provider given in the request body');
       validationError.status = 400;
       throw validationError;
     }
 
-    const llpResponse = await callOpenAI(myText, myModel);
+    if (!myModel) {
+      // model missing    
+      const validationError = new Error('No model provided in the request body');
+      validationError.status = 400;
+      throw validationError;
+    }    
+
+    let llpResponse = "";
+    
+    console.log("LLP_PROVIDERS.OPEN_AI: " + LLP_PROVIDERS.OPEN_AI);
+
+    switch (llpProvider) {
+      case LLP_PROVIDERS.OPEN_AI:          
+          llpResponse = await callOpenAI(myText, myModel);
+          break;
+      default: // Handle unknown platform                    
+          const validationError = new Error('LLP provider not recognised');
+          validationError.status = 400;
+          throw validationError;
+    }
     res.send(llpResponse); // Send the response to the client
+
   } catch (error) { // Error handling as per Fer's system (2/3)
     // Signals Express that an error occurred.
     // (Express will then invoke the appropriate error-handling middleware
