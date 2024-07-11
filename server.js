@@ -60,7 +60,7 @@ function setupRoutes() {
   // Use Post instead of Get (both in client and in server)
   // (F, gpt/claude) For reasons of Data length, Special characters & Security
   // Also ensure route below matches exactly with my (unity) client's endpoint
-  app.post('/my-gpt-endpoint', handleGptEndpoint);
+  app.post('/my-llp-endpoint', handleGptEndpoint);
 }
 
 async function handleGptEndpoint(req, res, next) { // Error handling as per Fer's system -"Next"- (1/3)
