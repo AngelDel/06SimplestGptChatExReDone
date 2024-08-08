@@ -69,12 +69,14 @@ async function handleLlpEndpoint(req, res, next) { // Error handling as per Fer'
   console.log("## req.body - message: " + JSON.stringify(req.body.Message));
   console.log("## req.body - sPlatformSentFrom: " + req.body.SPlatformSentFrom);
   console.log("## req.body - llp provider: " + req.body.SLlpProvider);
+  console.log("## req.body - temperature: " + req.body.Temperature);
   console.log("## req.body - model: " + req.body.Model);
   console.log("## ---------------------------------");
 
   try {    
     const myText = req.body.Message; // Access message from request body
     const llpProvider = req.body.SLlpProvider;
+    const myTemperature = req.body.Temperature;
     const myModel = req.body.Model;
 
     // Error handling
@@ -104,7 +106,7 @@ async function handleLlpEndpoint(req, res, next) { // Error handling as per Fer'
     
     switch (llpProvider) {
       case LLP_PROVIDERS.OPEN_AI:          
-          llpResponse = await callOpenAI(myText, myModel);
+          llpResponse = await callOpenAI(myText, myTemperature, myModel);
           break;
       default: // Handle unknown platform                    
           const validationError = new Error('LLP provider not recognised');
@@ -121,7 +123,7 @@ async function handleLlpEndpoint(req, res, next) { // Error handling as per Fer'
   }
 }
 
-async function callOpenAI(text, model) {
+async function callOpenAI(text, temperature, model) {
   const OPENAI_API_KEY_VALUE = readFileContents("OPENAI_API_KEY");
   
   try {
@@ -134,7 +136,7 @@ async function callOpenAI(text, model) {
       body: JSON.stringify({
         model: model,
         messages: [{ role: 'user', content: text }],
-        temperature: 1.0,
+        temperature: temperature,
         top_p: 0.7,
         n: 1,
         stream: false,
