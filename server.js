@@ -66,7 +66,13 @@ function setupRoutes() {
 
 async function handleLlpEndpoint(req, res, next) { // Error handling as per Fer's system -"Next"- (1/3)
   console.log("## req received --------------------");
-  console.log("## req.body - message: " + JSON.stringify(req.body.Message));
+  
+  //console.log("## req.body - messages: " + JSON.stringify(req.body.Messages));
+  console.log("## req.body - messages: ");
+  for (const message of req.body.Messages) {
+    console.log(`    Role: ${message.Role}, Content: ${message.Content}`);
+  }
+
   console.log("## req.body - sPlatformSentFrom: " + req.body.SPlatformSentFrom);
   console.log("## req.body - llp provider: " + req.body.SLlpProvider);
   console.log("## req.body - temperature: " + req.body.Temperature);
@@ -74,18 +80,34 @@ async function handleLlpEndpoint(req, res, next) { // Error handling as per Fer'
   console.log("## ---------------------------------");
 
   try {    
-    const myText = req.body.Message; // Access message from request body
+    const allMyMessagesInLlpConversation = req.body.Messages; // Access message from request body
     const llpProvider = req.body.SLlpProvider;
     const myTemperature = req.body.Temperature;
     const myModel = req.body.Model;
 
     // Error handling
-    // May also send an error message to client
-    if (!myText) {
+    // May also send an error message to client    
+
+    // Validation for message array
+    if (!allMyMessagesInLlpConversation || !Array.isArray(allMyMessagesInLlpConversation) || allMyMessagesInLlpConversation.length === 0) {
       // message missing    
-      const validationError = new Error('No message provided in the request body');
+      const validationError = new Error('No valid messages array provided in the request body');
       validationError.status = 400;
       throw validationError;
+    }
+
+    // Validation for each message object
+    for (const message of allMyMessagesInLlpConversation) {
+      if (!message.Role || typeof message.Role !== 'string') {
+        const validationError = new Error('Invalid or missing role property in message object');
+        validationError.status = 400;
+        throw validationError;
+      }
+      if (!message.Content || typeof message.Content !== 'string') {
+        const validationError = new Error('Invalid or missing content property in message object');
+        validationError.status = 400;
+        throw validationError;
+      }
     }
 
     if (!llpProvider) {
@@ -106,7 +128,7 @@ async function handleLlpEndpoint(req, res, next) { // Error handling as per Fer'
     
     switch (llpProvider) {
       case LLP_PROVIDERS.OPEN_AI:          
-          llpResponse = await callOpenAI(myText, myTemperature, myModel);
+          llpResponse = await callOpenAI(allMyMessagesInLlpConversation, myTemperature, myModel);
           break;
       default: // Handle unknown platform                    
           const validationError = new Error('LLP provider not recognised');
@@ -123,7 +145,7 @@ async function handleLlpEndpoint(req, res, next) { // Error handling as per Fer'
   }
 }
 
-async function callOpenAI(text, temperature, model) {
+async function callOpenAI(allMyMessagesInLlpConversation, temperature, model) {
   const OPENAI_API_KEY_VALUE = readFileContents("OPENAI_API_KEY");
   
   try {
@@ -135,7 +157,12 @@ async function callOpenAI(text, temperature, model) {
       },
       body: JSON.stringify({
         model: model,
-        messages: [{ role: 'user', content: text }],
+
+        messages: allMyMessagesInLlpConversation.map(message => ({ // change messages format to match new input
+          role: message.Role,
+          content: message.Content
+        })),
+
         temperature: temperature,
         top_p: 0.7,
         n: 1,
