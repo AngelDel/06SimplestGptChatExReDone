@@ -66,16 +66,16 @@ function setupRoutes() {
 
 async function handleLlpEndpoint(req, res, next) { // Error handling as per Fer's system -"Next"- (1/3)
   console.log("## req received --------------------");
-  console.log("## req.body - message: " + JSON.stringify(req.body.message));
-  console.log("## req.body - sPlatformSentFrom: " + req.body.sPlatformSentFrom);
-  console.log("## req.body - llp provider: " + req.body.sLlpProvider);
-  console.log("## req.body - model: " + req.body.model);
+  console.log("## req.body - message: " + JSON.stringify(req.body.Message));
+  console.log("## req.body - sPlatformSentFrom: " + req.body.SPlatformSentFrom);
+  console.log("## req.body - llp provider: " + req.body.SLlpProvider);
+  console.log("## req.body - model: " + req.body.Model);
   console.log("## ---------------------------------");
 
   try {    
-    const myText = req.body.message; // Access message from request body
-    const llpProvider = req.body.sLlpProvider;
-    const myModel = req.body.model;
+    const myText = req.body.Message; // Access message from request body
+    const llpProvider = req.body.SLlpProvider;
+    const myModel = req.body.Model;
 
     // Error handling
     // May also send an error message to client
