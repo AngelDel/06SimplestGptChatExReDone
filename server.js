@@ -68,7 +68,7 @@ async function handleLlpEndpoint(req, res, next) { // Error handling as per Fer'
   console.log("## req received --------------------");
   
   //console.log("## req.body - messages: " + JSON.stringify(req.body.Messages));
-  console.log("## req.body - messages: ");
+  console.log("## req.body - messages (" + req.body.Messages.length + "): ");
   for (const message of req.body.Messages) {
     console.log(`    Role: ${message.Role}, Content: ${message.Content}`);
   }
