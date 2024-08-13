@@ -62,6 +62,11 @@ function setupRoutes() {
   // (F, gpt/claude) For reasons of Data length, Special characters & Security
   // Also ensure route below matches exactly with my (unity) client's endpoint
   app.post('/my-llp-endpoint', handleLlpEndpoint);
+
+
+  // For fetching available models
+  app.get('/available-models', handleAvailableModelsRequest);  
+  app.use(errorHandler);
 }
 
 async function handleLlpEndpoint(req, res, next) { // Error handling as per Fer's system -"Next"- (1/3)
@@ -220,4 +225,34 @@ function startServer() {
       console.log('Local server: Go to http://localhost:' + PORT);
     }
   });
+}
+
+async function handleAvailableModelsRequest(req, res, next) {
+  console.log("Received request for available models");
+
+  try {
+    const OPENAI_API_KEY_VALUE = readFileContents("OPENAI_API_KEY");
+    
+     // For debugging, log that we're about to make a request to OpenAI
+     console.log("Fetching models from OpenAI...");
+
+    const response = await fetch('https://api.openai.com/v1/models', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY_VALUE}`,
+      },
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error('Unable to fetch models from OpenAI. Response: ' + JSON.stringify(data));
+    }
+
+    const data = await response.json();
+    res.json(data);
+
+  } catch (error) {
+    console.error(error);
+    next(new Error('Unable to fetch available models. Error: ' + error.message));
+  }
 }
