@@ -51,6 +51,7 @@ function addCustomCorsHeaders(req, res, next) {
 }
 
 function setupRoutes() {
+  const basePath = '/my-llp-endpoint';
 
   // Define a route
   app.get('/', (req, res) => {
@@ -61,11 +62,11 @@ function setupRoutes() {
   // Use Post instead of Get (both in client and in server)
   // (F, gpt/claude) For reasons of Data length, Special characters & Security
   // Also ensure route below matches exactly with my (unity) client's endpoint
-  app.post('/my-llp-endpoint', handleCompletionRequest);
+  app.post(`${basePath}/completions`, handleCompletionRequest);
 
 
   // For fetching available models
-  app.get('/available-models', handleAvailableModelsRequest);  
+  app.get(`${basePath}/available-models`, handleAvailableModelsRequest);  
   app.use(errorHandler);
 }
 
