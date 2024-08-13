@@ -61,7 +61,7 @@ function setupRoutes() {
   // Use Post instead of Get (both in client and in server)
   // (F, gpt/claude) For reasons of Data length, Special characters & Security
   // Also ensure route below matches exactly with my (unity) client's endpoint
-  app.post('/my-llp-endpoint', handleLlpEndpoint);
+  app.post('/my-llp-endpoint', handleCompletionRequest);
 
 
   // For fetching available models
@@ -69,7 +69,38 @@ function setupRoutes() {
   app.use(errorHandler);
 }
 
-async function handleLlpEndpoint(req, res, next) { // Error handling as per Fer's system -"Next"- (1/3)
+
+async function handleAvailableModelsRequest(req, res, next) {
+  console.log("Received request for available models");
+
+  try {
+    const OPENAI_API_KEY_VALUE = readFileContents("OPENAI_API_KEY");
+    
+     // For debugging, log that we're about to make a request to OpenAI
+     console.log("Fetching models from OpenAI...");
+
+    const response = await fetch('https://api.openai.com/v1/models', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY_VALUE}`,
+      },
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error('Unable to fetch models from OpenAI. Response: ' + JSON.stringify(data));
+    }
+
+    const data = await response.json();
+    res.json(data);
+
+  } catch (error) {
+    console.error(error);
+    next(new Error('Unable to fetch available models. Error: ' + error.message));
+  }
+}
+
+async function handleCompletionRequest(req, res, next) { // Error handling as per Fer's system -"Next"- (1/3)
   console.log("## req received --------------------");
   
   //console.log("## req.body - messages: " + JSON.stringify(req.body.Messages));
@@ -133,7 +164,7 @@ async function handleLlpEndpoint(req, res, next) { // Error handling as per Fer'
     
     switch (llpProvider) {
       case LLP_PROVIDERS.OPEN_AI:          
-          llpResponse = await callOpenAI(allMyMessagesInLlpConversation, myTemperature, myModel);
+          llpResponse = await _callOpenAI(allMyMessagesInLlpConversation, myTemperature, myModel);
           break;
       default: // Handle unknown platform                    
           const validationError = new Error('LLP provider not recognised');
@@ -147,47 +178,6 @@ async function handleLlpEndpoint(req, res, next) { // Error handling as per Fer'
     // (Express will then invoke the appropriate error-handling middleware
     // when finished with the current middleware stack).
     next(error);
-  }
-}
-
-async function callOpenAI(allMyMessagesInLlpConversation, temperature, model) {
-  const OPENAI_API_KEY_VALUE = readFileContents("OPENAI_API_KEY");
-  
-  try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY_VALUE}`,
-      },
-      body: JSON.stringify({
-        model: model,
-
-        messages: allMyMessagesInLlpConversation.map(message => ({ // change messages format to match new input
-          role: message.Role,
-          content: message.Content
-        })),
-
-        temperature: temperature,
-        top_p: 0.7,
-        n: 1,
-        stream: false,
-        presence_penalty: 0,
-        frequency_penalty: 0,
-      }),
-    });
-
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error('Unable to process your request (1). OpenAI response: ' + JSON.stringify(data));
-    }
-
-    const data = await response.json();
-    return data;
-
-  } catch (error) {
-    console.error(error);
-    throw new Error('Unable to process your request (2). Error: ' + JSON.stringify(error));
   }
 }
 
@@ -227,32 +217,45 @@ function startServer() {
   });
 }
 
-async function handleAvailableModelsRequest(req, res, next) {
-  console.log("Received request for available models");
+//-
 
+async function _callOpenAI(allMyMessagesInLlpConversation, temperature, model) {
+  const OPENAI_API_KEY_VALUE = readFileContents("OPENAI_API_KEY");
+  
   try {
-    const OPENAI_API_KEY_VALUE = readFileContents("OPENAI_API_KEY");
-    
-     // For debugging, log that we're about to make a request to OpenAI
-     console.log("Fetching models from OpenAI...");
-
-    const response = await fetch('https://api.openai.com/v1/models', {
-      method: 'GET',
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         'Authorization': `Bearer ${OPENAI_API_KEY_VALUE}`,
       },
+      body: JSON.stringify({
+        model: model,
+
+        messages: allMyMessagesInLlpConversation.map(message => ({ // change messages format to match new input
+          role: message.Role,
+          content: message.Content
+        })),
+
+        temperature: temperature,
+        top_p: 0.7,
+        n: 1,
+        stream: false,
+        presence_penalty: 0,
+        frequency_penalty: 0,
+      }),
     });
 
     if (!response.ok) {
       const data = await response.json();
-      throw new Error('Unable to fetch models from OpenAI. Response: ' + JSON.stringify(data));
+      throw new Error('Unable to process your request (1). OpenAI response: ' + JSON.stringify(data));
     }
 
     const data = await response.json();
-    res.json(data);
+    return data;
 
   } catch (error) {
     console.error(error);
-    next(new Error('Unable to fetch available models. Error: ' + error.message));
+    throw new Error('Unable to process your request (2). Error: ' + JSON.stringify(error));
   }
 }
