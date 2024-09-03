@@ -102,7 +102,7 @@ async function handleAvailableModelsRequest(req, res, next) {
 }
 
 async function handleCompletionRequest(req, res, next) { // Error handling as per Fer's system -"Next"- (1/3)
-  console.log("## req received --------------------");
+  console.log("## req received: -------------------");
   
   //console.log("## req.body - messages: " + JSON.stringify(req.body.Messages));
   console.log("## req.body - messages (" + req.body.Messages.length + "): ");
@@ -167,7 +167,7 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
       case LLP_PROVIDERS.OPEN_AI:          
           llpResponse = await _callOpenAI(allMyMessagesInLlpConversation, myTemperature, myModel);
 
-          console.log("$$ response ------------------------");
+          console.log("$$ response: -----------------------");
           //console.log("Raw JSON response from my server (and Open AI): " + JSON.stringify(llpResponse, null, 2));
           console.log("$$ message content from this server (and Open AI): '" + llpResponse.choices[0].message.content);
           console.log("$$ ---------------------------------");
