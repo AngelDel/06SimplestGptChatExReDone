@@ -166,6 +166,11 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
     switch (llpProvider) {
       case LLP_PROVIDERS.OPEN_AI:          
           llpResponse = await _callOpenAI(allMyMessagesInLlpConversation, myTemperature, myModel);
+
+          console.log("$$ response ------------------------");
+          //console.log("Raw JSON response from my server (and Open AI): " + JSON.stringify(llpResponse, null, 2));
+          console.log("$$ message content from this server (and Open AI): '" + llpResponse.choices[0].message.content);
+          console.log("$$ ---------------------------------");
           break;
       default: // Handle unknown platform                    
           const validationError = new Error('LLP provider not recognised');
