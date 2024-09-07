@@ -5,6 +5,7 @@ require('dotenv').config() // For using environment variables
 const cors = require('cors'); // Import cors package
 const fs = require('fs');
 const LLP_PROVIDERS = require('./llpProviders'); // for which AI provider used
+const axios = require('axios'); // Used to make HTTP requests to Auth0
 
 // 2. VARIABLE DECLARATIONS AND ASSIGNMENTS
 const app = express(); // Create an instance of Express
@@ -14,7 +15,7 @@ const PORT = process.env.PORT || 3000; // Define the port for the server to list
 const config = {
   authRequired: false,
   auth0Logout: true,
-  secret: process.env.AUTH0_SECRET,
+  secret: process.env.SESSION_SECRET,
   baseURL: process.env.BASE_URL,
   clientID: process.env.AUTH0_CLIENT_ID,
   issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL
@@ -83,8 +84,57 @@ function setupRoutes() {
 
 
   // Auth0 routes
+
+  // Test route
+  // will return the user's profile information when they log in
   app.get('/profile', (req, res) => {
     res.send(JSON.stringify(req.oidc.user));
+  });
+
+  // Login endpoint
+  // initiates the Auth0 login process
+  app.get('/login', (req, res) => {
+    res.oidc.login({ returnTo: '/profile' });
+  });
+
+  // Logout endpoint #
+  // handles user logout
+  app.get('/logout', (req, res) => {
+    res.oidc.logout({ returnTo: '/' });
+  });
+
+  // Token endpoint
+  // returns the access token for logged-in user
+  app.get('/token', (req, res) => {
+    if (req.oidc.isAuthenticated()) {
+      res.json({ access_token: req.oidc.accessToken });
+    } else {
+      res.status(401).json({ error: 'Not authenticated' });
+    }
+  });
+
+  // Token refresh endpoint
+  // refreshes the access token
+  // (meaning to obtain  new access token w/o requiring  user to log in again)
+  app.post('/refresh-token', async (req, res) => {
+    const { refresh_token } = req.body;
+    if (!refresh_token) {
+      return res.status(400).json({ error: 'Refresh token is required' });
+    }
+
+    try {
+      const response = await axios.post(`${process.env.AUTH0_ISSUER_BASE_URL}/oauth/token`, {
+        grant_type: 'refresh_token',
+        client_id: process.env.AUTH0_CLIENT_ID,
+        client_secret: process.env.AUTH0_CLIENT_SECRET,
+        refresh_token: refresh_token
+      });
+
+      res.json(response.data);
+    } catch (error) {
+      console.error('Error refreshing token:', error.response ? error.response.data : error.message);
+      res.status(500).json({ error: 'Failed to refresh token' });
+    }
   });
 
 
