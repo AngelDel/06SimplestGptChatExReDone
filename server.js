@@ -10,6 +10,16 @@ const LLP_PROVIDERS = require('./llpProviders'); // for which AI provider used
 const app = express(); // Create an instance of Express
 const PORT = process.env.PORT || 3000; // Define the port for the server to listen on 
 
+// Auth0 config
+const config = {
+  authRequired: false,
+  auth0Logout: true,
+  secret: process.env.AUTH0_SECRET,
+  baseURL: process.env.BASE_URL,
+  clientID: process.env.AUTH0_CLIENT_ID,
+  issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL
+};
+
 // 3. MAIN EXECUTION
 console.log(`Hello from the server`); // Executed when the file is first run
 startServer();
@@ -39,6 +49,19 @@ function setupMiddleware() {
   
   // Serve static files from the app directory
   app.use(express.static(path.join(__dirname, 'app')));
+
+
+  // Authentication middleware
+  
+  // Session middleware
+  app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true
+  }));
+
+  // Auth0 middleware
+  app.use(auth(config));
 }
 
 // CORS (2/2)
@@ -57,6 +80,13 @@ function setupRoutes() {
   app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'app', 'index.html')); // Serve the HTML file
   });
+
+
+  // Auth0 routes
+  app.get('/profile', (req, res) => {
+    res.send(JSON.stringify(req.oidc.user));
+  });
+
 
   // Send request
   // Use Post instead of Get (both in client and in server)
