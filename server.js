@@ -7,6 +7,10 @@ const fs = require('fs');
 const LLP_PROVIDERS = require('./llpProviders'); // for which AI provider used
 const axios = require('axios'); // Used to make HTTP requests to Auth0
 
+// Fix for "session is not defined" error
+const { auth } = require('express-openid-connect');
+const session = require('express-session');
+
 // 2. VARIABLE DECLARATIONS AND ASSIGNMENTS
 const app = express(); // Create an instance of Express
 const PORT = process.env.PORT || 3000; // Define the port for the server to listen on 
