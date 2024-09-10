@@ -22,7 +22,12 @@ const config = {
   secret: process.env.SESSION_SECRET,
   baseURL: process.env.BASE_URL,
   clientID: process.env.AUTH0_CLIENT_ID,
-  issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL
+  issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL,
+  clientSecret: process.env.AUTH0_CLIENT_SECRET,
+  authorizationParams: {
+    response_type: 'code',
+    scope: 'openid profile email'
+  },
 };
 
 // 3. MAIN EXECUTION
@@ -110,6 +115,11 @@ function setupRoutes() {
   // Token endpoint
   // returns the access token for logged-in user
   app.get('/token', (req, res) => {
+    console.log('Token request received');
+    console.log('Is authenticated:', req.oidc.isAuthenticated());
+    console.log('User:', req.oidc.user);
+    console.log('Access token:', req.oidc.accessToken);
+
     if (req.oidc.isAuthenticated()) {
       res.json({ access_token: req.oidc.accessToken });
     } else {
