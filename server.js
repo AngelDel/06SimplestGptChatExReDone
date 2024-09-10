@@ -9,7 +9,7 @@ const axios = require('axios'); // Used to make HTTP requests to Auth0
 
 // Fix for "session is not defined" error
 const { auth } = require('express-openid-connect');
-const session = require('express-session');
+const session = require('express-session'); // manages user sessions and helps maintain user state across requests
 
 // 2. VARIABLE DECLARATIONS AND ASSIGNMENTS
 const app = express(); // Create an instance of Express
@@ -63,11 +63,12 @@ function setupMiddleware() {
 
   // Authentication middleware
   
-  // Session middleware
+  // Session middleware - sets up session management for maintaining user state
   app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
-    saveUninitialized: true
+    saveUninitialized: true,
+    cookie: { secure: process.env.NODE_ENV === 'production' } // sent only over secure HTTPS connections (in production)
   }));
 
   // Auth0 middleware
@@ -106,14 +107,15 @@ function setupRoutes() {
     res.oidc.login({ returnTo: '/profile' });
   });
 
-  // Logout endpoint #
+  // Logout endpoint
   // handles user logout
   app.get('/logout', (req, res) => {
     res.oidc.logout({ returnTo: '/' });
   });
 
   // Token endpoint
-  // returns the access token for logged-in user
+  // returns the access token for logged-in user and 
+  // ensures that only authenticated users can access tokens
   app.get('/token', (req, res) => {
     console.log('Token request received');
     console.log('Is authenticated:', req.oidc.isAuthenticated());
@@ -125,6 +127,12 @@ function setupRoutes() {
     } else {
       res.status(401).json({ error: 'Not authenticated' });
     }
+  });
+
+  // Callback route
+  // Handles the redirect after successful Auth0 authentication
+  app.get('/callback', (req, res) => {
+    res.redirect('/');
   });
 
   // Token refresh endpoint
