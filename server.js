@@ -8,7 +8,7 @@ const LLP_PROVIDERS = require('./llpProviders'); // for which AI provider used
 const axios = require('axios'); // Used to make HTTP requests to Auth0
 
 // Fix for "session is not defined" error
-const { auth } = require('express-openid-connect');
+const { auth, requiresAuth } = require('express-openid-connect');
 const session = require('express-session'); // manages user sessions and helps maintain user state across requests
 
 // 2. VARIABLE DECLARATIONS AND ASSIGNMENTS
@@ -23,7 +23,10 @@ const config = {
   baseURL: process.env.BASE_URL,
   clientID: process.env.AUTH0_CLIENT_ID,
   issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL,
+  
   clientSecret: process.env.AUTH0_CLIENT_SECRET,
+  //clientSecret: process.env.SESSION_SECRET, // no funciona con este
+
   authorizationParams: {
     response_type: 'code',
     scope: 'openid profile email'
@@ -98,7 +101,7 @@ function setupRoutes() {
   // Test route
   // will return the user's profile information when they log in
   app.get('/profile', (req, res) => {
-    res.send(JSON.stringify(req.oidc.user));
+    res.send(JSON.stringify(req.oidc.user, null, 2));
   });
 
   // Login endpoint
