@@ -101,13 +101,40 @@ function setupRoutes() {
   // Test route
   // will return the user's profile information when they log in
   app.get('/profile', (req, res) => {
-    res.send(JSON.stringify(req.oidc.user, null, 2));
+    console.log('profile test log line');
+    console.log('Request headers (/profile):', req.headers);
+
+    console.log('!! req.oidc.idToken (/profile)', req.oidc.idToken);
+
+    res.send(JSON.stringify(req.oidc.user));
   });
 
   // Login endpoint
   // initiates the Auth0 login process
-  app.get('/login', (req, res) => {
-    res.oidc.login({ returnTo: '/profile' });
+  // # This line sets up what happens when the server gets a request to the '/loginnn' URL.
+  // # When someone tries to visit the '/loginnn' URL, this is the starting point for logging them in.
+  app.get('/loginnn', (req, res) => {
+    console.log('login test log line');    
+    //console.log('Request body (login):', req.body);
+    //console.log('Request headers (login):', req.headers);
+
+    //res.oidc.login({ returnTo: '/profile' });   
+
+    //res.oidc.login({ returnTo: 'http://localhost:5222?id_token=' + req.oidc.idToken });
+
+    // # This grabs a special token (ID token) tied to the user's identity from the request.
+    // # The server checks that it has the user’s identity token before moving forward.
+    const idToken = req.oidc.idToken;
+    
+    // # The return URL (where the user goes after login) is built with their identity token included in the link.
+    // # After the user logs in, they are sent to this URL along with their token for further processing.
+    const returnUrl = 'http://localhost:5222?id_token=' + idToken;
+    
+    // # This tells the server to log the user in and then send them to the link we created with their token.
+    // # The server finishes logging the user in and sends them back to the app with their identity info (token).
+    res.oidc.login({ returnTo: returnUrl });
+
+    //res.send('');
   });
 
   // Logout endpoint
@@ -122,8 +149,12 @@ function setupRoutes() {
   app.get('/token', (req, res) => {
     console.log('Token request received');
     console.log('Is authenticated:', req.oidc.isAuthenticated());
-    console.log('User:', req.oidc.user);
+    //console.log('User:', req.oidc.user);
     console.log('Access token:', req.oidc.accessToken);
+    //console.log('Request body (token):', req.body);
+    console.log('Request headers (token):', req.headers);
+
+    console.log('!! req.oidc.idToken (/token)', req.oidc.idToken);
 
     if (req.oidc.isAuthenticated()) {
       res.json({ access_token: req.oidc.accessToken });
@@ -135,6 +166,10 @@ function setupRoutes() {
   // Callback route
   // Handles the redirect after successful Auth0 authentication
   app.get('/callback', (req, res) => {
+    
+    console.log('Request body (callback):', req.body);
+    console.log('Request headers (callback):', req.headers);
+
     res.redirect('/');
   });
 
@@ -220,6 +255,21 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
   console.log("## req.body - temperature: " + req.body.Temperature);
   console.log("## req.body - model: " + req.body.Model);
   console.log("## ---------------------------------");
+
+
+
+  
+  console.log("## req.oidc.user (stringified): " + JSON.stringify(req.oidc.user));
+  
+  console.log("## req.oidc.isAuthenticated(): " + req.oidc.isAuthenticated());
+  //console.log("## req.oidc (full object): " + JSON.stringify(req.oidc));
+  
+  //console.log("## req.oidc.idToken: " + req.oidc.idToken);  
+  //console.log('Request headers:', req.headers);
+  console.log("## ---------------------------------");
+
+
+
 
   try {    
     const allMyMessagesInLlpConversation = req.body.Messages; // Access message from request body
