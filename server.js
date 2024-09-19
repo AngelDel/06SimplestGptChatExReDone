@@ -102,9 +102,10 @@ function setupRoutes() {
   // will return the user's profile information when they log in
   app.get('/profile', (req, res) => {
     console.log('profile test log line');
-    console.log('Request headers (/profile):', req.headers);
+    //console.log('Request headers (/profile):', req.headers);
 
     console.log('!! req.oidc.idToken (/profile)', req.oidc.idToken);
+    console.log('!! req.oidc.accessToken (/profile)', req.oidc.accessToken);
 
     res.send(JSON.stringify(req.oidc.user));
   });
@@ -177,6 +178,8 @@ function setupRoutes() {
   // refreshes the access token
   // (meaning to obtain  new access token w/o requiring  user to log in again)
   app.post('/refresh-token', async (req, res) => {
+    console.log('Inside /refresh-token endpoint');
+
     const { refresh_token } = req.body;
     if (!refresh_token) {
       return res.status(400).json({ error: 'Refresh token is required' });
