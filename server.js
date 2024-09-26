@@ -104,8 +104,8 @@ function setupRoutes() {
     console.log('profile test log line');
     //console.log('Request headers (/profile):', req.headers);
 
-    console.log('!! req.oidc.idToken (/profile)', req.oidc.idToken);
-    console.log('!! req.oidc.accessToken (/profile)', req.oidc.accessToken);
+    console.log('   !T! req.oidc.idToken (/profile)', req.oidc.idToken);
+    //console.log('!! req.oidc.accessToken (/profile)', req.oidc.accessToken);
 
     res.send(JSON.stringify(req.oidc.user));
   });
@@ -115,7 +115,10 @@ function setupRoutes() {
   // # This line sets up what happens when the server gets a request to the '/loginnn' URL.
   // # When someone tries to visit the '/loginnn' URL, this is the starting point for logging them in.
   app.get('/loginnn', (req, res) => {
+    console.log("### 3 (endpoint '/login') Initiating login process");
+
     console.log('login test log line');    
+
     //console.log('Request body (login):', req.body);
     //console.log('Request headers (login):', req.headers);
 
@@ -126,6 +129,8 @@ function setupRoutes() {
     // # This grabs a special token (ID token) tied to the user's identity from the request.
     // # The server checks that it has the user’s identity token before moving forward.
     const idToken = req.oidc.idToken;
+
+    console.log('   !T! req.oidc.idToken (/loginnn)', req.oidc.idToken);
     
     // # The return URL (where the user goes after login) is built with their identity token included in the link.
     // # After the user logs in, they are sent to this URL along with their token for further processing.
@@ -134,6 +139,20 @@ function setupRoutes() {
     // # This tells the server to log the user in and then send them to the link we created with their token.
     // # The server finishes logging the user in and sends them back to the app with their identity info (token).
     res.oidc.login({ returnTo: returnUrl });
+
+
+
+
+    // Use Auth0's authorize endpoint
+    //////////////const auth0Domain = process.env.AUTH0_DOMAIN;
+    ////////////const clientId = process.env.AUTH0_CLIENT_ID;
+    //////////const redirectUri = `${process.env.BASE_URL}/callback`;
+    // from:
+    // https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow/add-login-auth-code-flow
+    ////////////////const authorizationUrl = `https://${auth0Domain}/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=openid%20profile%20email`;
+  
+  ///////////////res.redirect(authorizationUrl);
+
 
     //res.send('');
   });
@@ -148,17 +167,23 @@ function setupRoutes() {
   // returns the access token for logged-in user and 
   // ensures that only authenticated users can access tokens
   app.get('/token', (req, res) => {
-    console.log('Token request received');
-    console.log('Is authenticated:', req.oidc.isAuthenticated());
+    console.log('   Token request received');
+    console.log('   Is authenticated:', req.oidc.isAuthenticated());
     //console.log('User:', req.oidc.user);
-    console.log('Access token:', req.oidc.accessToken);
+    ///////////////console.log('   Access token:', req.oidc.accessToken);
     //console.log('Request body (token):', req.body);
-    console.log('Request headers (token):', req.headers);
+    //console.log('Request headers (token):', req.headers);
 
-    console.log('!! req.oidc.idToken (/token)', req.oidc.idToken);
+    console.log('   !T! req.oidc.idToken (/token)', req.oidc.idToken);
 
     if (req.oidc.isAuthenticated()) {
+
       res.json({ access_token: req.oidc.accessToken });
+      //////////////////////res.json({ access_token: req.oidc.idToken });
+      
+      //res.send(JSON.stringify(req.oidc.idToken));
+      ////////////////////////////////////res.send(req.oidc.idToken);
+
     } else {
       res.status(401).json({ error: 'Not authenticated' });
     }
@@ -166,12 +191,54 @@ function setupRoutes() {
 
   // Callback route
   // Handles the redirect after successful Auth0 authentication
-  app.get('/callback', (req, res) => {
+  app.get('/callback', async (req, res) => {
     
+    console.log("### 4 (endpoint '/callback') Received callback with authorization code");
+
     console.log('Request body (callback):', req.body);
     console.log('Request headers (callback):', req.headers);
 
-    res.redirect('/');
+    /////////////////res.redirect('/');
+
+
+
+    const { code } = req.query;
+  
+
+    // Logauthorization code
+    console.log(`# (setupRoutes/callback) Authorization Code: ${code}`);
+
+
+    if (!code) {
+      return res.status(400).send('Authorization code is missing');
+    }
+
+    console.log("### 5 (endpoint '/callback') Preparing to exchange authorization code for tokens");
+
+    try {
+      console.log("### 6 (before exchangeCodeForTokens): Exchanging code for tokens");
+
+      // Token exchange logic
+      const tokenResponse = await exchangeCodeForTokens(code);
+      
+      console.log("### 7 (after exchangeCodeForTokens) Received tokens from Auth0");
+      console.log("### and");
+      console.log("### 8 (endpoint '/callback') Redirecting to Unity with ID token");
+
+
+      // Log line for ID token
+      console.log(`# (setupRoutes/callback) ID Token: ${tokenResponse.id_token}`);
+
+
+      // Redirect to Unity with the ID token
+      const redirectTo = `http://localhost:5222?id_token=${tokenResponse.id_token}`;
+      console.log('Redirecting to: ' + redirectTo + '');
+
+      res.redirect(redirectTo);
+    } catch (error) {
+      console.error('Error in callback:', error);
+      res.status(500).send('An error occurred during authentication');
+    }
   });
 
   // Token refresh endpoint
@@ -211,6 +278,26 @@ function setupRoutes() {
   // For fetching available models
   app.get(`${basePath}/available-models`, handleAvailableModelsRequest);  
   app.use(errorHandler);
+}
+
+
+// Token exchange function: 
+// get the tokens from Auth0 using the authorization code.
+async function exchangeCodeForTokens(code) {
+  const auth0Domain = process.env.AUTH0_DOMAIN;
+  const clientId = process.env.AUTH0_CLIENT_ID;
+  const clientSecret = process.env.AUTH0_CLIENT_SECRET;
+  const redirectUri = `${process.env.BASE_URL}/callback`;
+
+  const response = await axios.post(`https://${auth0Domain}/oauth/token`, {
+    grant_type: 'authorization_code',
+    client_id: clientId,
+    client_secret: clientSecret,
+    code: code,
+    redirect_uri: redirectUri
+  });
+
+  return response.data;
 }
 
 
