@@ -120,6 +120,9 @@ function setupRoutes() {
     console.log("### 3 (endpoint '/login') Initiating login process");
 
     console.log('login test log line');    
+    
+    console.log('req.oidc object:', JSON.stringify(req.oidc, null, 2));
+    console.log('Auth config:', JSON.stringify(config, null, 2));
 
     //console.log('Request body (login):', req.body);
     //console.log('Request headers (login):', req.headers);
@@ -203,6 +206,10 @@ function setupRoutes() {
   // Handles the redirect after successful Auth0 authentication
   app.get('/callbackkk', async (req, res) => {
     
+    // callback request
+    console.log('Callback received. Query params:', req.query);
+
+
     console.log('   !T! req.oidc.idToken (/callback)', req.oidc.idToken);
     //_logIdToken('callback', req.oidc.idToken);
 
@@ -212,18 +219,20 @@ function setupRoutes() {
     console.log('Request body (callback):', req.body);
     console.log('Request headers (callback):', req.headers);
 
-    /////////////////res.redirect('/');
-
+    /////////////////res.redirect('/');    
 
 
     const { code } = req.query;
   
 
-    // Logauthorization code
+    // Log authorization code
     console.log(`# (setupRoutes/callback) Authorization Code: ${code}`);
 
 
     if (!code) {
+      // missing code
+      console.log('Authorization code is missing in callback');
+
       return res.status(400).send('Authorization code is missing');
     }
 
@@ -297,11 +306,20 @@ function setupRoutes() {
 
 // Token exchange function: 
 // get the tokens from Auth0 using the authorization code.
-async function exchangeCodeForTokens(code) {
+async function exchangeCodeForTokens(code) {  
+  console.log('Exchanging code for tokens. Code:', code);
+  
   const auth0Domain = process.env.AUTH0_DOMAIN;
   const clientId = process.env.AUTH0_CLIENT_ID;
   const clientSecret = process.env.AUTH0_CLIENT_SECRET;
   const redirectUri = `${process.env.BASE_URL}/callback`;
+  
+  console.log('Auth0 config:', {
+    auth0Domain,
+    clientId,
+    clientSecret: clientSecret ? '[REDACTED]' : undefined,
+    redirectUri
+  });
 
   const response = await axios.post(`https://${auth0Domain}/oauth/token`, {
     grant_type: 'authorization_code',
@@ -310,6 +328,8 @@ async function exchangeCodeForTokens(code) {
     code: code,
     redirect_uri: redirectUri
   });
+  
+  console.log('Token exchange response:', JSON.stringify(response.data, null, 2));
 
   return response.data;
 }
@@ -464,6 +484,13 @@ function readFileContents(fileName) {
 // A: takes care of the "Next" calls
 function errorHandler(err, req, res, next) {  
   console.log("Inside error -Next- middleware for handling errors");
+  
+  console.error('Error details:', {
+    message: err.message,
+    stack: err.stack,
+    status: err.status || 500
+  });
+
   res
     .status(err.status || 500)
     .json({ error: err.message, errorCode: 1224 });
