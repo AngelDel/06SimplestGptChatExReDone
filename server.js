@@ -146,6 +146,10 @@ function setupRoutes() {
 
     // # The return URL (where the user goes after login) is built with their identity token included in the link.
     // # After the user logs in, they are sent to this URL along with their token for further processing.
+    
+    // gpt: "Ensure that the returnTo URL is exactly the same as the callback URL expected by the server."????
+    //const returnUrl = 'http://localhost:' + PORT;
+    
     //const returnUrl = 'http://localhost:5222?id_token=' + idToken;
     const returnUrl = 'http://localhost:5222?id_token=' + idToken + '&access_token=' + accessToken;
     
@@ -210,8 +214,9 @@ function setupRoutes() {
   });
 
   // Callback route
-  // Handles the redirect after successful Auth0 authentication
-  app.get('/callbackkk', async (req, res) => {
+  // Auth0 redirects here  after successful authentication
+  // This redirection carries an authorization code (a small piece of data)
+  app.get('/callback', async (req, res) => {
     console.log("# endpoint '/callback'");
 
     // callback request
@@ -263,6 +268,8 @@ function setupRoutes() {
 
       // Redirect to Unity with the ID token
       const redirectTo = `http://localhost:5222?id_token=${tokenResponse.id_token}`;
+      ////const redirectTo = `http://localhost:5222?id_token=${tokenResponse.id_token}&access_token=${accessToken}`;
+
       console.log('   Redirecting to: ' + redirectTo + '');
 
       console.log("#");
@@ -325,7 +332,7 @@ async function exchangeCodeForTokens(code) {
   const clientId = process.env.AUTH0_CLIENT_ID;
   const clientSecret = process.env.AUTH0_CLIENT_SECRET;  
   const redirectUri = `${process.env.BASE_URL}/callback`;
-  ////////////////const redirectUri = `${process.env.BASE_URL}/callbackkk`;
+  ////////////////const redirectUri = `${process.env.BASE_URL}/callback`;
   
   console.log('   Auth0 config:', {
     auth0Domain,
