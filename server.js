@@ -101,13 +101,15 @@ function setupRoutes() {
   // Test route
   // will return the user's profile information when they log in
   app.get('/profile', (req, res) => {
-    console.log('profile test log line');
+    console.log("# endpoint '/profile'");
     //console.log('Request headers (/profile):', req.headers);
     
     //console.log('   !T! req.oidc.idToken (/profile)', req.oidc.idToken);
     console.log('   !T! req.oidc.idToken (/profile):', req.oidc.idToken);
 
     //console.log('!! req.oidc.accessToken (/profile)', req.oidc.accessToken);
+
+    console.log("#");
 
     res.send(JSON.stringify(req.oidc.user));
   });
@@ -118,11 +120,9 @@ function setupRoutes() {
   // # When someone tries to visit the '/loginnn' URL, this is the starting point for logging them in.
   app.get('/loginnn', (req, res) => {
     console.log("### 3 (endpoint '/login') Initiating login process");
-
-    console.log('login test log line');    
     
-    console.log('req.oidc object:', JSON.stringify(req.oidc, null, 2));
-    console.log('Auth config:', JSON.stringify(config, null, 2));
+    console.log('   req.oidc object:', JSON.stringify(req.oidc, null, 2));
+    console.log('   Auth config:', JSON.stringify(config, null, 2));
 
     //console.log('Request body (login):', req.body);
     //console.log('Request headers (login):', req.headers);
@@ -148,6 +148,8 @@ function setupRoutes() {
     //const returnUrl = 'http://localhost:5222?id_token=' + idToken;
     const returnUrl = 'http://localhost:5222?id_token=' + idToken + '&access_token=' + accessToken;
     
+    console.log("# end 3 (login)");
+
     // # This tells the server to log the user in and then send them to the link we created with their token.
     // # The server finishes logging the user in and sends them back to the app with their identity info (token).
     res.oidc.login({ returnTo: returnUrl });
@@ -179,7 +181,7 @@ function setupRoutes() {
   // returns the access token for logged-in user and 
   // ensures that only authenticated users can access tokens
   app.get('/token', (req, res) => {
-    console.log('   Token request received');
+    console.log("# endpoint '/token': Token request received");    
     console.log('   Is authenticated:', req.oidc.isAuthenticated());
     //console.log('User:', req.oidc.user);
     ///////////////console.log('   Access token:', req.oidc.accessToken);
@@ -188,9 +190,13 @@ function setupRoutes() {
 
     //console.log('   !T! req.oidc.idToken (/token)', req.oidc.idToken);
     console.log('   !T! req.oidc.idToken (/token):', req.oidc.idToken);
+    console.log("#");
 
     if (req.oidc.isAuthenticated()) {
-      console.log('# req.oidc.accessToken (/token)', req.oidc.accessToken);
+      console.log('   req.oidc.accessToken (/token)', req.oidc.accessToken);
+      
+      console.log("#");
+
       res.json({ access_token: req.oidc.accessToken });
       //////////////////////res.json({ access_token: req.oidc.idToken });
       
@@ -199,25 +205,26 @@ function setupRoutes() {
 
     } else {
       res.status(401).json({ error: 'Not authenticated' });
-    }
+    }    
   });
 
   // Callback route
   // Handles the redirect after successful Auth0 authentication
   app.get('/callbackkk', async (req, res) => {
-    
+    console.log("# endpoint '/callback'");
+
     // callback request
-    console.log('Callback received. Query params:', req.query);
+    console.log('   Callback received. Query params:', req.query);
 
 
     console.log('   !T! req.oidc.idToken (/callback)', req.oidc.idToken);
     //_logIdToken('callback', req.oidc.idToken);
 
 
-    console.log("### 4 (endpoint '/callback') Received callback with authorization code");
+    console.log("   ### 4 (endpoint '/callback') Received callback with authorization code");
 
-    console.log('Request body (callback):', req.body);
-    console.log('Request headers (callback):', req.headers);
+    console.log('   Request body (callback):', req.body);
+    console.log('   Request headers (callback):', req.headers);
 
     /////////////////res.redirect('/');    
 
@@ -226,36 +233,38 @@ function setupRoutes() {
   
 
     // Log authorization code
-    console.log(`# (setupRoutes/callback) Authorization Code: ${code}`);
+    console.log(`   (setupRoutes/callback) Authorization Code: ${code}`);
 
 
     if (!code) {
       // missing code
-      console.log('Authorization code is missing in callback');
+      console.log('   Authorization code is missing in callback');
 
       return res.status(400).send('Authorization code is missing');
     }
 
-    console.log("### 5 (endpoint '/callback') Preparing to exchange authorization code for tokens");
+    console.log("   ### 5 (endpoint '/callback') Preparing to exchange authorization code for tokens");
 
     try {
-      console.log("### 6 (before exchangeCodeForTokens): Exchanging code for tokens");
+      console.log("   ### 6 (before exchangeCodeForTokens): Exchanging code for tokens");
 
       // Token exchange logic
       const tokenResponse = await exchangeCodeForTokens(code);
       
-      console.log("### 7 (after exchangeCodeForTokens) Received tokens from Auth0");
-      console.log("### and");
-      console.log("### 8 (endpoint '/callback') Redirecting to Unity with ID token");
+      console.log("   ### 7 (after exchangeCodeForTokens) Received tokens from Auth0");
+      console.log("   ### and");
+      console.log("   ### 8 (endpoint '/callback') Redirecting to Unity with ID token");
 
 
       // Log line for ID token
-      console.log(`# (setupRoutes/callback) ID Token: ${tokenResponse.id_token}`);
+      console.log(`   # (setupRoutes/callback) ID Token: ${tokenResponse.id_token}`);
 
 
       // Redirect to Unity with the ID token
       const redirectTo = `http://localhost:5222?id_token=${tokenResponse.id_token}`;
-      console.log('Redirecting to: ' + redirectTo + '');
+      console.log('   Redirecting to: ' + redirectTo + '');
+
+      console.log("#");
 
       res.redirect(redirectTo);
     } catch (error) {
@@ -268,7 +277,7 @@ function setupRoutes() {
   // refreshes the access token
   // (meaning to obtain  new access token w/o requiring  user to log in again)
   app.post('/refresh-token', async (req, res) => {
-    console.log('Inside /refresh-token endpoint');
+    console.log('# Inside /refresh-token endpoint');
 
     const { refresh_token } = req.body;
     if (!refresh_token) {
@@ -282,6 +291,8 @@ function setupRoutes() {
         client_secret: process.env.AUTH0_CLIENT_SECRET,
         refresh_token: refresh_token
       });
+
+      console.log("#");
 
       res.json(response.data);
     } catch (error) {
@@ -307,14 +318,15 @@ function setupRoutes() {
 // Token exchange function: 
 // get the tokens from Auth0 using the authorization code.
 async function exchangeCodeForTokens(code) {  
-  console.log('Exchanging code for tokens. Code:', code);
+  console.log('# Exchanging code for tokens. Code:', code);
   
   const auth0Domain = process.env.AUTH0_DOMAIN;
   const clientId = process.env.AUTH0_CLIENT_ID;
-  const clientSecret = process.env.AUTH0_CLIENT_SECRET;
+  const clientSecret = process.env.AUTH0_CLIENT_SECRET;  
   const redirectUri = `${process.env.BASE_URL}/callback`;
+  ////////////////const redirectUri = `${process.env.BASE_URL}/callbackkk`;
   
-  console.log('Auth0 config:', {
+  console.log('   Auth0 config:', {
     auth0Domain,
     clientId,
     clientSecret: clientSecret ? '[REDACTED]' : undefined,
@@ -329,20 +341,22 @@ async function exchangeCodeForTokens(code) {
     redirect_uri: redirectUri
   });
   
-  console.log('Token exchange response:', JSON.stringify(response.data, null, 2));
+  console.log('   Token exchange response:', JSON.stringify(response.data, null, 2));
+
+  console.log('#');
 
   return response.data;
 }
 
 
 async function handleAvailableModelsRequest(req, res, next) {
-  console.log("Received request for available models");
+  console.log("# Received request for available models");
 
   try {
     const OPENAI_API_KEY_VALUE = readFileContents("OPENAI_API_KEY");
     
      // For debugging, log that we're about to make a request to OpenAI
-     console.log("Fetching models from OpenAI...");
+     console.log("   Fetching models from OpenAI...");
 
     const response = await fetch('https://api.openai.com/v1/models', {
       method: 'GET',
@@ -357,6 +371,9 @@ async function handleAvailableModelsRequest(req, res, next) {
     }
 
     const data = await response.json();
+
+    console.log('#');
+
     res.json(data);
 
   } catch (error) {
@@ -483,13 +500,15 @@ function readFileContents(fileName) {
 // Error handling as per Fer's system (3/3)
 // A: takes care of the "Next" calls
 function errorHandler(err, req, res, next) {  
-  console.log("Inside error -Next- middleware for handling errors");
+  console.log("# Inside error -Next- middleware for handling errors");
   
   console.error('Error details:', {
     message: err.message,
     stack: err.stack,
     status: err.status || 500
   });
+
+  console.log('#');
 
   res
     .status(err.status || 500)
