@@ -123,7 +123,7 @@ function setupRoutes() {
     console.log("### 3 (endpoint '/loginnn') Initiating login process");
     
     console.log('   req.oidc object:', JSON.stringify(req.oidc, null, 2));
-    console.log('   Auth config:', JSON.stringify(config, null, 2));
+    //console.log('   Auth config:', JSON.stringify(config, null, 2));
 
     //console.log('Request body (login):', req.body);
     //console.log('Request headers (login):', req.headers);
