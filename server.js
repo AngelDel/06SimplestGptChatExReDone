@@ -120,7 +120,7 @@ function setupRoutes() {
   // # This line sets up what happens when the server gets a request to the '/loginnn' URL.
   // # When someone tries to visit the '/loginnn' URL, this is the starting point for logging them in.
   app.get('/loginnn', (req, res) => {
-    console.log("### 3 (endpoint '/login') Initiating login process");
+    console.log("### 3 (endpoint '/loginnn') Initiating login process");
     
     console.log('   req.oidc object:', JSON.stringify(req.oidc, null, 2));
     console.log('   Auth config:', JSON.stringify(config, null, 2));
@@ -153,7 +153,7 @@ function setupRoutes() {
     //const returnUrl = 'http://localhost:5222?id_token=' + idToken;
     const returnUrl = 'http://localhost:5222?id_token=' + idToken + '&access_token=' + accessToken;
     
-    console.log("# end 3 (login)");
+    console.log("# end 3 (loginnn)");
 
     // # This tells the server to log the user in and then send them to the link we created with their token.
     // # The server finishes logging the user in and sends them back to the app with their identity info (token).
