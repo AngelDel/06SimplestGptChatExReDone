@@ -346,6 +346,9 @@ async function handleAvailableModelsRequest(req, res, next) {
 }
 
 async function handleCompletionRequest(req, res, next) { // Error handling as per Fer's system -"Next"- (1/3)
+  console.log("");
+  console.log("---------------------------------");
+          
   console.log("## req received: -------------------");
   
   //console.log("## req.body - messages: " + JSON.stringify(req.body.Messages));
@@ -358,21 +361,19 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
   console.log("## req.body - llp provider: " + req.body.SLlpProvider);
   console.log("## req.body - temperature: " + req.body.Temperature);
   console.log("## req.body - model: " + req.body.Model);
-  console.log("## ---------------------------------");
+  console.log("---------------------------------");
 
 
 
   
-  console.log("## req.oidc.user (stringified): " + JSON.stringify(req.oidc.user));
-  
-  console.log("## req.oidc.isAuthenticated(): " + req.oidc.isAuthenticated());
-
-  console.log('   !T! req.oidc.idToken (handleCompletionRequest):', req.oidc.idToken);
+  console.log("** req.oidc.user (stringified): " + JSON.stringify(req.oidc.user));  
+  console.log("** req.oidc.isAuthenticated(): " + req.oidc.isAuthenticated());
+  console.log("** !T! req.oidc.idToken (handleCompletionRequest):", req.oidc.idToken);
   //console.log("## req.oidc (full object): " + JSON.stringify(req.oidc));
   
   //console.log("## req.oidc.idToken: " + req.oidc.idToken);  
   //console.log('Request headers:', req.headers);
-  console.log("## ---------------------------------");
+  console.log("---------------------------------");
 
 
 
@@ -431,7 +432,8 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
           console.log("$$ response: -----------------------");
           //console.log("Raw JSON response from my server (and Open AI): " + JSON.stringify(llpResponse, null, 2));
           console.log("$$ message content from this server (and Open AI): '" + llpResponse.choices[0].message.content);
-          console.log("$$ ---------------------------------");
+          console.log("---------------------------------");
+          console.log("");
           break;
       default: // Handle unknown platform                    
           const validationError = new Error('LLP provider not recognised');
