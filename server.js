@@ -8,7 +8,7 @@ const LLP_PROVIDERS = require('./llpProviders'); // for which AI provider used
 const axios = require('axios'); // Used to make HTTP requests to Auth0
 
 // Fix for "session is not defined" error
-const { auth, requiresAuth } = require('express-openid-connect');
+const { auth } = require('express-openid-connect');
 const session = require('express-session'); // manages user sessions and helps maintain user state across requests
 
 // 2. VARIABLE DECLARATIONS AND ASSIGNMENTS
@@ -39,6 +39,21 @@ startServer();
 
 // 4. FUNCTION DEFINITIONS
 function setupMiddleware() {
+  
+  // Authentication middleware
+  
+  // Session middleware - sets up session management for maintaining user state
+  app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: process.env.NODE_ENV === 'production' } // sent only over secure HTTPS connections (in production)
+  }));
+
+  // Auth0 middleware
+  app.use(auth(config));
+
+
   // CORS (1/2)
   // A: Otherwise requests from a browser don't work
   
@@ -62,20 +77,6 @@ function setupMiddleware() {
   
   // Serve static files from the app directory
   app.use(express.static(path.join(__dirname, 'app')));
-
-
-  // Authentication middleware
-  
-  // Session middleware - sets up session management for maintaining user state
-  app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: process.env.NODE_ENV === 'production' } // sent only over secure HTTPS connections (in production)
-  }));
-
-  // Auth0 middleware
-  app.use(auth(config));
 }
 
 // CORS (2/2)
