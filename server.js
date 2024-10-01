@@ -186,16 +186,10 @@ function setupRoutes() {
   // returns the access token for logged-in user and 
   // ensures that only authenticated users can access tokens
   app.get('/token', (req, res) => {
-    console.log("# endpoint '/token': Token request received");    
-    console.log('   Is authenticated:', req.oidc.isAuthenticated());
-    //console.log('User:', req.oidc.user);
-    ///////////////console.log('   Access token:', req.oidc.accessToken);
-    //console.log('Request body (token):', req.body);
-    //console.log('Request headers (token):', req.headers);
-
-    //console.log('   !T! req.oidc.idToken (/token)', req.oidc.idToken);
-    console.log('   !T! req.oidc.idToken (/token):', req.oidc.idToken);
-    console.log("#");
+    // console.log("# endpoint '/token': Token request received");    
+    // console.log('   Is authenticated:', req.oidc.isAuthenticated());    
+    // console.log('   !T! req.oidc.idToken (/token):', req.oidc.idToken);
+    // console.log("#");
 
     if (req.oidc.isAuthenticated()) {
       console.log('   req.oidc.accessToken (/token)', req.oidc.accessToken);
