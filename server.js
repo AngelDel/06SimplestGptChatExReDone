@@ -28,8 +28,15 @@ const config = {
   //clientSecret: process.env.SESSION_SECRET, // no funciona con este
 
   authorizationParams: {
-    response_type: 'code',
+    
+    //response_type: 'code',
+    //response_type: 'id_token', 
+    //response_type: 'token', // doesn;t work, but sh b access token, acc to "https://community.auth0.com/t/id-token-not-present-in-tokenset-when-logging-in-with-passwordless-embedded-login-email-magic-link/137507"
+    response_type: 'code id_token',
+
     scope: 'openid profile email'
+    //scope: 'openid profile'
+    //scope: 'openid'
   },
 };
 
@@ -51,6 +58,8 @@ function setupMiddleware() {
   }));
 
   // Auth0 middleware
+  // according to their tuto (5: 3 of 4): auth router attaches /login, /logout, and /callback routes to the baseURL
+  // https://auth0.com/docs/quickstart/webapp/express
   app.use(auth(config));
 
 
@@ -107,6 +116,10 @@ function setupRoutes() {
     
     //console.log('   !T! req.oidc.idToken (/profile)', req.oidc.idToken);
     console.log('   !T! req.oidc.idToken (/profile):', req.oidc.idToken);
+  
+    console.log('   req.oidc.user (/profile):', req.oidc.user); 
+    console.log('   req.oidc.isAuthenticated (/profile):', req.oidc.isAuthenticated);
+    if (req.oidc.isAuthenticated) console.log('      yes'); else console.log('      no');
 
     //console.log('!! req.oidc.accessToken (/profile)', req.oidc.accessToken);
 
@@ -210,59 +223,73 @@ function setupRoutes() {
   // Callback route
   // Auth0 redirects here  after successful authentication
   // This redirection carries an authorization code (a small piece of data)
-  app.get('/callback', async (req, res) => {
-    console.log("# endpoint '/callback'");
+  app.get('/callbackk', async (req, res) => {
+    console.log("# endpoint '/callbackk'");
 
     // callback request
     console.log('   Callback received. Query params:', req.query);
 
 
-    console.log('   !T! req.oidc.idToken (/callback)', req.oidc.idToken);
+    //////////////////////////console.log('   !T! req.oidc.idToken (I) (/callbackk)', req.oidc.idToken);
     //_logIdToken('callback', req.oidc.idToken);
 
 
-    console.log("   ### 4 (endpoint '/callback') Received callback with authorization code");
+    console.log("   ### 4 (endpoint '/callbackk') Received callback with authorization code");
 
-    console.log('   Request body (callback):', req.body);
-    console.log('   Request headers (callback):', req.headers);
+    console.log('   Request body (callbackk):', req.body);
+    console.log('   Request headers (callbackk):', req.headers);
 
     /////////////////res.redirect('/');    
 
 
-    const { code } = req.query;
+
+
+
+    // const { code } = req.query;
   
 
-    // Log authorization code
-    console.log(`   (setupRoutes/callback) Authorization Code: ${code}`);
+    // // Log authorization code
+    // console.log(`   (setupRoutes/callback) Authorization Code: ${code}`);
 
 
-    if (!code) {
-      // missing code
-      console.log('   Authorization code is missing in callback');
+    // if (!code) {
+    //   // missing code
+    //   console.log('   Authorization code is missing in callback');
 
-      return res.status(400).send('Authorization code is missing');
-    }
+    //   return res.status(400).send('Authorization code is missing');
+    // }
 
-    console.log("   ### 5 (endpoint '/callback') Preparing to exchange authorization code for tokens");
+    // console.log("   ### 5 (endpoint '/callback') Preparing to exchange authorization code for tokens");
+
+
+
 
     try {
-      console.log("   ### 6 (before exchangeCodeForTokens): Exchanging code for tokens");
 
-      // Token exchange logic
-      const tokenResponse = await exchangeCodeForTokens(code);
+
+
+      // console.log("   ### 6 (before exchangeCodeForTokens): Exchanging code for tokens");
+
+      // // Token exchange logic
+      // const tokenResponse = await exchangeCodeForTokens(code);
       
-      console.log("   ### 7 (after exchangeCodeForTokens) Received tokens from Auth0");
-      console.log("   ### and");
-      console.log("   ### 8 (endpoint '/callback') Redirecting to Unity with ID token");
+      // console.log("   ### 7 (after exchangeCodeForTokens) Received tokens from Auth0");
+      // console.log("   ### and");
+      // console.log("   ### 8 (endpoint '/callback') Redirecting to Unity with ID token");
 
 
-      // Log line for ID token
-      console.log(`   # (setupRoutes/callback) ID Token: ${tokenResponse.id_token}`);
+      // // Log line for ID token
+      // console.log(`   # (setupRoutes/callback) ID Token: ${tokenResponse.id_token}`);
 
 
-      // Redirect to Unity with the ID token
-      const redirectTo = `http://localhost:5222?id_token=${tokenResponse.id_token}`;
+
+
+
+      // Redirect to Unity with the ID token      
       ////const redirectTo = `http://localhost:5222?id_token=${tokenResponse.id_token}&access_token=${accessToken}`;
+      /////////////////const redirectTo = `http://localhost:5222?id_token=${tokenResponse.id_token}`;
+      console.log('   !T! req.oidc.idToken (II) (/callbackk)', req.oidc.idToken);
+      const redirectTo = `http://localhost:5222?id_token=${req.oidc.idToken}`;
 
       console.log('   Redirecting to: ' + redirectTo + '');
 
@@ -325,8 +352,7 @@ async function exchangeCodeForTokens(code) {
   const auth0Domain = process.env.AUTH0_DOMAIN;
   const clientId = process.env.AUTH0_CLIENT_ID;
   const clientSecret = process.env.AUTH0_CLIENT_SECRET;  
-  const redirectUri = `${process.env.BASE_URL}/callback`;
-  ////////////////const redirectUri = `${process.env.BASE_URL}/callback`;
+  const redirectUri = `${process.env.BASE_URL}/callback`;  
   
   console.log('   Auth0 config:', {
     auth0Domain,
@@ -390,6 +416,10 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
           
   console.log("## req received: -------------------");
   
+  console.log("## req: " + req);
+  /////////////console.log("** req (stringified): " + JSON.parse(req));
+  ////////////console.log("** req.oidc (stringified): " + JSON.parse(req.oidcr));
+
   //console.log("## req.body - messages: " + JSON.stringify(req.body.Messages));
   console.log("## req.body - messages (" + req.body.Messages.length + "): ");
   for (const message of req.body.Messages) {    
