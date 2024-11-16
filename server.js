@@ -347,35 +347,35 @@ function setupRoutes() {
 
 // Token exchange function: 
 // get the tokens from Auth0 using the authorization code.
-async function exchangeCodeForTokens(code) {  
-  console.log('# Exchanging code for tokens. Code:', code);
+// async function exchangeCodeForTokens(code) {  
+//   console.log('# Exchanging code for tokens. Code:', code);
   
-  const auth0Domain = process.env.AUTH0_DOMAIN;
-  const clientId = process.env.AUTH0_CLIENT_ID;
-  const clientSecret = process.env.AUTH0_CLIENT_SECRET;  
-  const redirectUri = `${process.env.BASE_URL}/callback`;  
+//   const auth0Domain = process.env.AUTH0_DOMAIN;
+//   const clientId = process.env.AUTH0_CLIENT_ID;
+//   const clientSecret = process.env.AUTH0_CLIENT_SECRET;  
+//   const redirectUri = `${process.env.BASE_URL}/callback`;  
   
-  console.log('   Auth0 config:', {
-    auth0Domain,
-    clientId,
-    clientSecret: clientSecret ? '[REDACTED]' : undefined,
-    redirectUri
-  });
+//   console.log('   Auth0 config:', {
+//     auth0Domain,
+//     clientId,
+//     clientSecret: clientSecret ? '[REDACTED]' : undefined,
+//     redirectUri
+//   });
 
-  const response = await axios.post(`https://${auth0Domain}/oauth/token`, {
-    grant_type: 'authorization_code',
-    client_id: clientId,
-    client_secret: clientSecret,
-    code: code,
-    redirect_uri: redirectUri
-  });
+//   const response = await axios.post(`https://${auth0Domain}/oauth/token`, {
+//     grant_type: 'authorization_code',
+//     client_id: clientId,
+//     client_secret: clientSecret,
+//     code: code,
+//     redirect_uri: redirectUri
+//   });
   
-  console.log('   Token exchange response:', JSON.stringify(response.data, null, 2));
+//   console.log('   Token exchange response:', JSON.stringify(response.data, null, 2));
 
-  console.log('#');
+//   console.log('#');
 
-  return response.data;
-}
+//   return response.data;
+// }
 
 
 async function handleAvailableModelsRequest(req, res, next) {
