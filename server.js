@@ -130,10 +130,10 @@ function setupRoutes() {
 
   // Login endpoint
   // initiates the Auth0 login process
-  // # This line sets up what happens when the server gets a request to the '/loginnn' URL.
-  // # When someone tries to visit the '/loginnn' URL, this is the starting point for logging them in.
-  app.get('/loginnn', (req, res) => {
-    console.log("### 3 (endpoint '/loginnn') Initiating login process");
+  // # This line sets up what happens when the server gets a request to the '/myLogin' URL.
+  // # When someone tries to visit the '/myLogin' URL, this is the starting point for logging them in.
+  app.get('/myLogin', (req, res) => {
+    console.log("### 3 (endpoint '/myLogin') Initiating login process");
     
     console.log('   req.oidc object:', JSON.stringify(req.oidc, null, 2));
     //console.log('   Auth config:', JSON.stringify(config, null, 2));
@@ -150,7 +150,7 @@ function setupRoutes() {
     const idToken = req.oidc.idToken;
     
     //console.log('   !T! req.oidc.idToken (/loginn)', req.oidc.idToken);
-    console.log('   !T! req.oidc.idToken (/loginnn):', req.oidc.idToken);
+    console.log('   !T! req.oidc.idToken (/myLogin):', req.oidc.idToken);
     
     const accessToken = req.oidc.accessToken.access_token;
     console.log('   accessToken:', accessToken);
@@ -165,8 +165,9 @@ function setupRoutes() {
     
     //const returnUrl = 'http://localhost:5222?id_token=' + idToken;
     const returnUrl = 'http://localhost:5222?id_token=' + idToken + '&access_token=' + accessToken;
-    
-    console.log("# end 3 (loginnn)");
+    console.log('   returnUrl: ' + returnUrl + '');
+
+    console.log("# end 3 (myLogin)");
 
     // # This tells the server to log the user in and then send them to the link we created with their token.
     // # The server finishes logging the user in and sends them back to the app with their identity info (token).
@@ -438,6 +439,7 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
   console.log("** req.oidc.user (stringified): " + JSON.stringify(req.oidc.user));  
   console.log("** req.oidc.isAuthenticated(): " + req.oidc.isAuthenticated());
   console.log("** !T! req.oidc.idToken (handleCompletionRequest):", req.oidc.idToken);
+  console.log('   Request headers (handleCompletionRequest):', req.headers);
   //console.log("## req.oidc (full object): " + JSON.stringify(req.oidc));
   
   //console.log("## req.oidc.idToken: " + req.oidc.idToken);  
