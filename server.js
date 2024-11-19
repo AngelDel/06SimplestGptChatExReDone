@@ -414,7 +414,7 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
 
   
   console.log("** req.oidc.user (stringified): " + JSON.stringify(req.oidc.user));  
-  console.log("** req.oidc.isAuthenticated(): " + req.oidc.isAuthenticated());
+  console.log("** req.oidc.isAuthenticated()?????????????: " + req.oidc.isAuthenticated());
   console.log("** !T! req.oidc.idToken (handleCompletionRequest):", req.oidc.idToken);
   console.log('   Request headers (handleCompletionRequest):', req.headers);
   //console.log("## req.oidc (full object): " + JSON.stringify(req.oidc));
