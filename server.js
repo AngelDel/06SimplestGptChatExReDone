@@ -397,6 +397,37 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
   console.log("## req: " + req);
   /////////////console.log("** req (stringified): " + JSON.parse(req));
   ////////////console.log("** req.oidc (stringified): " + JSON.parse(req.oidcr));
+  console.log("Processing request (handleCompletionRequest)");
+
+
+
+
+
+  const authHeader = req.headers.authorization;
+  
+  // Add detailed auth header logging
+  console.log("CC Auth header present:", !!authHeader);
+  console.log("CC Auth header starts with 'Bearer':", authHeader?.startsWith('Bearer '));
+    
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Missing or malformed Authorization header' });
+  }
+
+  const token = authHeader.split(' ')[1];
+  
+  // Token format check
+  console.log("CC Received token structure:");
+  console.log("CC - Parts count:", token.split('.').Length);
+  console.log("CC - Each part length:");
+  token.split('.').forEach((part, index) => {
+    console.log(`  Part ${index}: ${part.length} characters`);
+  });  
+  console.log("CC Token first chars:", token.substring(0, 20) + "...");
+  console.log("CC Full token: '" + token + "'");
+
+
+
+
 
   //console.log("## req.body - messages: " + JSON.stringify(req.body.Messages));
   console.log("## req.body - messages (" + req.body.Messages.length + "): ");
