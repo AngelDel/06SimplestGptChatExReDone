@@ -192,7 +192,9 @@ function setupRoutes() {
     //const returnUrl = 'http://localhost:' + PORT;
     
     //const returnUrl = 'http://localhost:5222?id_token=' + idToken;
+    //const returnUrl = 'http://localhost:5222?access_token=' + accessToken;
     const returnUrl = 'http://localhost:5222?id_token=' + idToken + '&access_token=' + accessToken;
+    
     console.log('   returnUrl: ' + returnUrl + '');
 
     console.log("# end 3 (myLogin)");
