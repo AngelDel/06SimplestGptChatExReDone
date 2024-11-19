@@ -28,15 +28,10 @@ const config = {
   //clientSecret: process.env.SESSION_SECRET, // no funciona con este
 
   authorizationParams: {
-    
-    //response_type: 'code',
-    //response_type: 'id_token', 
-    //response_type: 'token', // doesn;t work, but sh b access token, acc to "https://community.auth0.com/t/id-token-not-present-in-tokenset-when-logging-in-with-passwordless-embedded-login-email-magic-link/137507"
+    //response_type: 'token', // doesn';'t work, but sh b access token, acc to "https://community.auth0.com/t/id-token-not-present-in-tokenset-when-logging-in-with-passwordless-embedded-login-email-magic-link/137507"
     response_type: 'code id_token',
 
     scope: 'openid profile email'
-    //scope: 'openid profile'
-    //scope: 'openid'
   },
 };
 
@@ -112,27 +107,18 @@ function setupRoutes() {
   // will return the user's profile information when they log in
   app.get('/profile', (req, res) => {
     console.log("# endpoint '/profile'");
-    //console.log('Request headers (/profile):', req.headers);
-    
-    //console.log('   !T! req.oidc.idToken (/profile)', req.oidc.idToken);
-    console.log('   !T! req.oidc.idToken (/profile):', req.oidc.idToken);
-  
+    //console.log('Request headers (/profile):', req.headers);    
+    console.log('   !T! req.oidc.idToken (/profile):', req.oidc.idToken);  
     console.log('   req.oidc.user (/profile):', req.oidc.user); 
     console.log('req.oidc.idTokenClaims:', req.oidc.idTokenClaims);
     console.log('   req.oidc.isAuthenticated (/profile):', req.oidc.isAuthenticated);
     if (req.oidc.isAuthenticated) console.log('      yes'); else console.log('      no');
-
-
     
     console.log('   req.oidc complete object (1)! (/profile):', req.oidc);
     console.log('   req.oidc complete object (2)! (/profile):', JSON.stringify(req.oidc, null, 2));
 
     const util = require('util');
     console.log('   req.oidc complete object (3)! (/profile):', util.inspect(req.oidc, { depth: null, showHidden: true }));
-
-
-
-    //console.log('!! req.oidc.accessToken (/profile)', req.oidc.accessToken);
 
     console.log("#");
 
@@ -141,32 +127,18 @@ function setupRoutes() {
 
   // Login endpoint
   // initiates the Auth0 login process
-  // # This line sets up what happens when the server gets a request to the '/my_login' URL.
-  // # When someone tries to visit the '/my_login' URL, this is the starting point for logging them in.
+  // This line sets up what happens when the server gets a request to the '/my_login' URL.
+  // When someone tries to visit the '/my_login' URL, this is the starting point for logging them in.
   app.get('/my_login', (req, res) => {
     console.log("### 3 (endpoint '/my_login') Initiating login process");
     
     console.log('   req.oidc object:', JSON.stringify(req.oidc, null, 2));
-    //console.log('   Auth config:', JSON.stringify(config, null, 2));
-
-    //console.log('Request body (login):', req.body);
-    //console.log('Request headers (login):', req.headers);
-
-    //res.oidc.login({ returnTo: '/profile' });   
-
-    //res.oidc.login({ returnTo: 'http://localhost:5222?id_token=' + req.oidc.idToken });
-
-    // # This grabs a special token (ID token) tied to the user's identity from the request.
-    // # The server checks that it has the user’s identity token before moving forward.
+    
     const idToken = req.oidc.idToken;
     
     //console.log('   !T! req.oidc.idToken (/loginn)', req.oidc.idToken);
     console.log('   !T! req.oidc.idToken (/my_login):', req.oidc.idToken);
     
-
-
-
-
     //const accessToken = req.oidc.access_token;
     //////////////const accessToken = req.oidc.accessToken.access_token;    
     let accessToken;
@@ -178,15 +150,12 @@ function setupRoutes() {
       accessToken = req.oidc.accessToken.access_token;
     }
 
-
-
-
     console.log('   accessToken:', accessToken);
 
     console.log('   YA, PERO... Is authenticated?:', req.oidc.isAuthenticated());
 
-    // # The return URL (where the user goes after login) is built with their identity token included in the link.
-    // # After the user logs in, they are sent to this URL along with their token for further processing.
+    // The return URL (where the user goes after login) is built with their identity token included in the link.
+    // After the user logs in, they are sent to this URL along with their token for further processing.
     
     // gpt: "Ensure that the returnTo URL is exactly the same as the callback URL expected by the server."????
     //const returnUrl = 'http://localhost:' + PORT;
@@ -199,25 +168,9 @@ function setupRoutes() {
 
     console.log("# end 3 (my_login)");
 
-    // # This tells the server to log the user in and then send them to the link we created with their token.
-    // # The server finishes logging the user in and sends them back to the app with their identity info (token).
+    // This tells the server to log the user in and then send them to the link we created with their token.
+    // The server finishes logging the user in and sends them back to the app with their identity info (token).
     res.oidc.login({ returnTo: returnUrl });
-
-
-
-
-    // Use Auth0's authorize endpoint
-    //////////////const auth0Domain = process.env.AUTH0_DOMAIN;
-    ////////////const clientId = process.env.AUTH0_CLIENT_ID;
-    //////////const redirectUri = `${process.env.BASE_URL}/callback`;
-    // from:
-    // https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow/add-login-auth-code-flow
-    ////////////////const authorizationUrl = `https://${auth0Domain}/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=openid%20profile%20email`;
-  
-  ///////////////res.redirect(authorizationUrl);
-
-
-    //res.send('');
   });
 
   // Logout endpoint
@@ -229,22 +182,13 @@ function setupRoutes() {
   // Token endpoint
   // returns the access token for logged-in user and 
   // ensures that only authenticated users can access tokens
-  app.get('/token', (req, res) => {
-    // console.log("# endpoint '/token': Token request received");    
-    // console.log('   Is authenticated:', req.oidc.isAuthenticated());    
-    // console.log('   !T! req.oidc.idToken (/token):', req.oidc.idToken);
-    // console.log("#");
-
+  app.get('/token', (req, res) => {    
     if (req.oidc.isAuthenticated()) {
       console.log('   req.oidc.accessToken (/token)', req.oidc.accessToken);
       
       console.log("#");
 
-      res.json({ access_token: req.oidc.accessToken });
-      //////////////////////res.json({ access_token: req.oidc.idToken });
-      
-      //res.send(JSON.stringify(req.oidc.idToken));
-      ////////////////////////////////////res.send(req.oidc.idToken);
+      res.json({ access_token: req.oidc.accessToken });      
 
     } else {
       res.status(401).json({ error: 'Not authenticated' });
@@ -278,7 +222,6 @@ function setupRoutes() {
       res.status(500).json({ error: 'Failed to refresh token' });
     }
   });
-
 
   // Send request
   // Use Post instead of Get (both in client and in server)
@@ -338,8 +281,6 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
 
 
 
-
-
   const authHeader = req.headers.authorization;
   
   // Add detailed auth header logging
@@ -364,8 +305,6 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
 
 
 
-
-
   //console.log("## req.body - messages: " + JSON.stringify(req.body.Messages));
   console.log("## req.body - messages (" + req.body.Messages.length + "): ");
   for (const message of req.body.Messages) {    
@@ -377,18 +316,11 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
   console.log("## req.body - temperature: " + req.body.Temperature);
   console.log("## req.body - model: " + req.body.Model);
   console.log("---------------------------------");
-
-
-
   
   console.log("** req.oidc.user (stringified): " + JSON.stringify(req.oidc.user));  
   console.log("** req.oidc.isAuthenticated()?????????????: " + req.oidc.isAuthenticated());
   console.log("** !T! req.oidc.idToken (handleCompletionRequest):", req.oidc.idToken);
-  console.log('   Request headers (handleCompletionRequest):', req.headers);
-  //console.log("## req.oidc (full object): " + JSON.stringify(req.oidc));
-  
-  //console.log("## req.oidc.idToken: " + req.oidc.idToken);  
-  //console.log('Request headers:', req.headers);
+  console.log('   Request headers (handleCompletionRequest):', req.headers);  
   console.log("---------------------------------");
 
 
