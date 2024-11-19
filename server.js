@@ -98,7 +98,7 @@ function addCustomCorsHeaders(req, res, next) {
 }
 
 function setupRoutes() {
-  const basePath = '/my-llp-endpoint';
+  const baseLlmPath = '/my-llp-endpoint';
 
   // Define a route
   app.get('/', (req, res) => {
@@ -141,10 +141,10 @@ function setupRoutes() {
 
   // Login endpoint
   // initiates the Auth0 login process
-  // # This line sets up what happens when the server gets a request to the '/myLogin' URL.
-  // # When someone tries to visit the '/myLogin' URL, this is the starting point for logging them in.
-  app.get('/myLogin', (req, res) => {
-    console.log("### 3 (endpoint '/myLogin') Initiating login process");
+  // # This line sets up what happens when the server gets a request to the '/my_login' URL.
+  // # When someone tries to visit the '/my_login' URL, this is the starting point for logging them in.
+  app.get('/my_login', (req, res) => {
+    console.log("### 3 (endpoint '/my_login') Initiating login process");
     
     console.log('   req.oidc object:', JSON.stringify(req.oidc, null, 2));
     //console.log('   Auth config:', JSON.stringify(config, null, 2));
@@ -161,7 +161,7 @@ function setupRoutes() {
     const idToken = req.oidc.idToken;
     
     //console.log('   !T! req.oidc.idToken (/loginn)', req.oidc.idToken);
-    console.log('   !T! req.oidc.idToken (/myLogin):', req.oidc.idToken);
+    console.log('   !T! req.oidc.idToken (/my_login):', req.oidc.idToken);
     
 
 
@@ -197,7 +197,7 @@ function setupRoutes() {
     
     console.log('   returnUrl: ' + returnUrl + '');
 
-    console.log("# end 3 (myLogin)");
+    console.log("# end 3 (my_login)");
 
     // # This tells the server to log the user in and then send them to the link we created with their token.
     // # The server finishes logging the user in and sends them back to the app with their identity info (token).
@@ -366,11 +366,11 @@ function setupRoutes() {
   // Use Post instead of Get (both in client and in server)
   // (F, gpt/claude) For reasons of Data length, Special characters & Security
   // Also ensure route below matches exactly with my (unity) client's endpoint
-  app.post(`${basePath}/completions`, handleCompletionRequest);
+  app.post(`${baseLlmPath}/completions`, handleCompletionRequest);
 
 
   // For fetching available models
-  app.get(`${basePath}/available-models`, handleAvailableModelsRequest);  
+  app.get(`${baseLlmPath}/available-models`, handleAvailableModelsRequest);  
   app.use(errorHandler);
 }
 
