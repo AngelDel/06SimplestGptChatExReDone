@@ -163,7 +163,24 @@ function setupRoutes() {
     //console.log('   !T! req.oidc.idToken (/loginn)', req.oidc.idToken);
     console.log('   !T! req.oidc.idToken (/myLogin):', req.oidc.idToken);
     
-    const accessToken = req.oidc.accessToken.access_token;
+
+
+
+
+    //const accessToken = req.oidc.access_token;
+    //////////////const accessToken = req.oidc.accessToken.access_token;    
+    let accessToken;
+    if (!req.oidc) {
+      console.log("req.oidc does not exist.");
+    } else if (!req.oidc.accessToken) {
+      console.log("req.oidc.accessToken does not exist.");
+    } else {
+      accessToken = req.oidc.accessToken.access_token;
+    }
+
+
+
+
     console.log('   accessToken:', accessToken);
 
     console.log('   YA, PERO... Is authenticated?:', req.oidc.isAuthenticated());
