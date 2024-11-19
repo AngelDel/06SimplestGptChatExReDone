@@ -254,84 +254,71 @@ function setupRoutes() {
   // Callback route
   // Auth0 redirects here  after successful authentication
   // This redirection carries an authorization code (a small piece of data)
-  app.get('/callbackk', async (req, res) => {
-    console.log("# endpoint '/callbackk'");
+  // app.get('/callbackk', async (req, res) => {
+  //   console.log("# endpoint '/callbackk'");
 
-    // callback request
-    console.log('   Callback received. Query params:', req.query);
-
-
-    //////////////////////////console.log('   !T! req.oidc.idToken (I) (/callbackk)', req.oidc.idToken);
-    //_logIdToken('callback', req.oidc.idToken);
+  //   // callback request
+  //   console.log('   Callback received. Query params:', req.query);
 
 
-    console.log("   ### 4 (endpoint '/callbackk') Received callback with authorization code");
-
-    console.log('   Request body (callbackk):', req.body);
-    console.log('   Request headers (callbackk):', req.headers);
-
-    /////////////////res.redirect('/');    
+  //   //////////////////////////console.log('   !T! req.oidc.idToken (I) (/callbackk)', req.oidc.idToken);
+  //   //_logIdToken('callback', req.oidc.idToken);
 
 
+  //   console.log("   ### 4 (endpoint '/callbackk') Received callback with authorization code");
+
+  //   console.log('   Request body (callbackk):', req.body);
+  //   console.log('   Request headers (callbackk):', req.headers);
+
+  //   /////////////////res.redirect('/');    
 
 
-
-    // const { code } = req.query;
+  //   // const { code } = req.query;
   
 
-    // // Log authorization code
-    // console.log(`   (setupRoutes/callback) Authorization Code: ${code}`);
+  //   // // Log authorization code
+  //   // console.log(`   (setupRoutes/callback) Authorization Code: ${code}`);
 
 
-    // if (!code) {
-    //   // missing code
-    //   console.log('   Authorization code is missing in callback');
+  //   // if (!code) {
+  //   //   // missing code
+  //   //   console.log('   Authorization code is missing in callback');
 
-    //   return res.status(400).send('Authorization code is missing');
-    // }
+  //   //   return res.status(400).send('Authorization code is missing');
+  //   // }
 
-    // console.log("   ### 5 (endpoint '/callback') Preparing to exchange authorization code for tokens");
-
-
+  //   // console.log("   ### 5 (endpoint '/callback') Preparing to exchange authorization code for tokens");
 
 
-    try {
-
-
-
-      // console.log("   ### 6 (before exchangeCodeForTokens): Exchanging code for tokens");
-
-      // // Token exchange logic
-      // const tokenResponse = await exchangeCodeForTokens(code);
+  //   try {
+  //     // console.log("   ### 6 (before exchangeCodeForTokens): Exchanging code for tokens");
+  //     // // Token exchange logic
+  //     // const tokenResponse = await exchangeCodeForTokens(code);
       
-      // console.log("   ### 7 (after exchangeCodeForTokens) Received tokens from Auth0");
-      // console.log("   ### and");
-      // console.log("   ### 8 (endpoint '/callback') Redirecting to Unity with ID token");
+  //     // console.log("   ### 7 (after exchangeCodeForTokens) Received tokens from Auth0");
+  //     // console.log("   ### and");
+  //     // console.log("   ### 8 (endpoint '/callback') Redirecting to Unity with ID token");
+
+  //     // // Log line for ID token
+  //     // console.log(`   # (setupRoutes/callback) ID Token: ${tokenResponse.id_token}`);
 
 
-      // // Log line for ID token
-      // console.log(`   # (setupRoutes/callback) ID Token: ${tokenResponse.id_token}`);
+  //     // Redirect to Unity with the ID token      
+  //     ////const redirectTo = `http://localhost:5222?id_token=${tokenResponse.id_token}&access_token=${accessToken}`;
+  //     /////////////////const redirectTo = `http://localhost:5222?id_token=${tokenResponse.id_token}`;
+  //     console.log('   !T! req.oidc.idToken (II) (/callbackk)', req.oidc.idToken);
+  //     const redirectTo = `http://localhost:5222?id_token=${req.oidc.idToken}`;
 
+  //     console.log('   Redirecting to: ' + redirectTo + '');
 
+  //     console.log("#");
 
-
-
-      // Redirect to Unity with the ID token      
-      ////const redirectTo = `http://localhost:5222?id_token=${tokenResponse.id_token}&access_token=${accessToken}`;
-      /////////////////const redirectTo = `http://localhost:5222?id_token=${tokenResponse.id_token}`;
-      console.log('   !T! req.oidc.idToken (II) (/callbackk)', req.oidc.idToken);
-      const redirectTo = `http://localhost:5222?id_token=${req.oidc.idToken}`;
-
-      console.log('   Redirecting to: ' + redirectTo + '');
-
-      console.log("#");
-
-      res.redirect(redirectTo);
-    } catch (error) {
-      console.error('Error in callback:', error);
-      res.status(500).send('An error occurred during authentication');
-    }
-  });
+  //     res.redirect(redirectTo);
+  //   } catch (error) {
+  //     console.error('Error in callback:', error);
+  //     res.status(500).send('An error occurred during authentication');
+  //   }
+  // });
 
   // Token refresh endpoint
   // refreshes the access token
