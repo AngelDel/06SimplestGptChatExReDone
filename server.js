@@ -118,8 +118,19 @@ function setupRoutes() {
     console.log('   !T! req.oidc.idToken (/profile):', req.oidc.idToken);
   
     console.log('   req.oidc.user (/profile):', req.oidc.user); 
+    console.log('req.oidc.idTokenClaims:', req.oidc.idTokenClaims);
     console.log('   req.oidc.isAuthenticated (/profile):', req.oidc.isAuthenticated);
     if (req.oidc.isAuthenticated) console.log('      yes'); else console.log('      no');
+
+
+    
+    console.log('   req.oidc complete object (1)! (/profile):', req.oidc);
+    console.log('   req.oidc complete object (2)! (/profile):', JSON.stringify(req.oidc, null, 2));
+
+    const util = require('util');
+    console.log('   req.oidc complete object (3)! (/profile):', util.inspect(req.oidc, { depth: null, showHidden: true }));
+
+
 
     //console.log('!! req.oidc.accessToken (/profile)', req.oidc.accessToken);
 
