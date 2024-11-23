@@ -6,6 +6,8 @@ const cors = require('cors'); // Import cors package
 const fs = require('fs');
 const LLP_PROVIDERS = require('./llpProviders'); // for which AI provider used
 const axios = require('axios'); // Used to make HTTP requests to Auth0
+const jwt = require('jsonwebtoken');
+const jwks = require('jwks-rsa');
 
 // Fix for "session is not defined" error
 const { auth } = require('express-openid-connect');
@@ -16,7 +18,7 @@ const app = express(); // Create an instance of Express
 const PORT = process.env.PORT || 3000; // Define the port for the server to listen on 
 
 // Auth0 config
-const config = {
+const auth0Config = {
   authRequired: false,
   auth0Logout: true,
   secret: process.env.SESSION_SECRET,
@@ -28,9 +30,12 @@ const config = {
   //clientSecret: process.env.SESSION_SECRET, // no funciona con este
 
   authorizationParams: {
-    //response_type: 'token', // doesn';'t work, but sh b access token, acc to "https://community.auth0.com/t/id-token-not-present-in-tokenset-when-logging-in-with-passwordless-embedded-login-email-magic-link/137507"
+    //response_type: 'token', // doesn't work, but sh b access token, acc to "https://community.auth0.com/t/id-token-not-present-in-tokenset-when-logging-in-with-passwordless-embedded-login-email-magic-link/137507"
     response_type: 'code id_token',
+    //response_type: 'code id_token token',
 
+    //scope: 'openid profile email'
+    //scope: 'openid profile email api:access'
     scope: 'openid profile email'
   },
 };
@@ -48,15 +53,11 @@ function setupMiddleware() {
   app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
-    saveUninitialized: true,
-    cookie: { secure: process.env.NODE_ENV === 'production' } // sent only over secure HTTPS connections (in production)
+    saveUninitialized: false,    
+    cookie: { 
+      secure: process.env.NODE_ENV === 'production' // sent only over secure HTTPS connections (in production)      
+    }
   }));
-
-  // Auth0 middleware
-  // according to their tuto (5: 3 of 4): auth router attaches /login, /logout, and /callback routes to the baseURL
-  // https://auth0.com/docs/quickstart/webapp/express
-  app.use(auth(config));
-
 
   // CORS (1/2)
   // A: Otherwise requests from a browser don't work
@@ -83,6 +84,101 @@ function setupMiddleware() {
   app.use(express.static(path.join(__dirname, 'app')));
 }
 
+function validateJwtMiddleware(req, res, next) {
+  const authHeader = req.headers.authorization;
+  console.log("Auth header:", authHeader);
+  
+
+
+
+
+  // Inspect claims in the token
+  const tokenPrev = authHeader.split(' ')[1];
+
+  // Token decoding to inspect claims
+  try {
+    const decodedToken = jwt.decode(tokenPrev, {complete: true});
+    console.log("Decoded token header:", decodedToken.header);
+    console.log("Decoded token payload:", decodedToken.payload);
+    console.log("Token aud:", decodedToken.payload.aud);
+    console.log("Token iss:", decodedToken.payload.iss);
+  } catch (err) {
+    console.log("Error decoding token:", err);
+  }
+
+
+
+
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Missing or malformed Authorization header' });
+  }
+
+  const jwksClient = jwks({
+    jwksUri: `${process.env.AUTH0_DOMAIN}/.well-known/jwks.json`,
+    cache: true,
+    rateLimit: true,
+    requestHeaders: {}, // Eempty headers object
+    timeout: 30000 // Increase timeout
+  });  
+  console.log(`JWKS URI: ${process.env.AUTH0_DOMAIN}/.well-known/jwks.json`); // Debug logging for the above
+
+  if (authHeader) {
+     const token = authHeader.split(' ')[1];
+     console.log("Token structure:");
+     console.log("- Parts:", token.split('.').length);
+     console.log("- First part:", token.substring(0, 30));
+  }
+
+  const getKey = (header, callback) => {
+    jwksClient.getSigningKey(header.kid, (err, key) => {
+      if (err) {
+        return callback(err);
+      }
+      const signingKey = key.publicKey || key.rsaPublicKey;
+      callback(null, signingKey);
+    });
+  };
+
+
+  // More detailed logging:
+  // Show what we're actually checking against
+  console.log("Validating with:");
+  console.log("- issuer:", `${process.env.AUTH0_DOMAIN}/`);
+  //console.log("Expected audience:", process.env.AUTH0_AUDIENCE);
+  console.log("- audience:", process.env.AUTH0_CLIENT_ID); // temp to use with id_token used as access_token!!!!!!!!!!!!!!!!
+
+
+  const token = authHeader.split(' ')[1];
+
+  jwt.verify(token, getKey, {
+    algorithms: ['RS256'],
+
+
+    //issuer: `https://${process.env.AUTH0_DOMAIN}/`,
+    
+
+    issuer: `${process.env.AUTH0_DOMAIN}/`,
+    
+    //audience: process.env.AUTH0_AUDIENCE
+    audience: process.env.AUTH0_CLIENT_ID // temp to use with id_token used as access_token!!!!!!!!!!!!!!!!
+
+    //issuer: `${process.env.AUTH0_DOMAIN}/`
+
+
+  }, (err, decoded) => {
+    if (err) {
+      console.log("Token verification error:", err);
+      console.log("Error sent to Unity (from validateJwtMiddleware: '" + err + "'");
+      return res.status(401).json({ error: `Invalid token (${err})` });
+    }
+    req.user = decoded;
+    console.log("Token verification successful!");
+    console.log("Decoded user:", decoded);
+    next();
+  });
+}
+
 // CORS (2/2)
 // Add custom middleware to ensure cors headers
 function addCustomCorsHeaders(req, res, next) {
@@ -92,8 +188,19 @@ function addCustomCorsHeaders(req, res, next) {
   next();
 }
 
+// Protection middleware function (keep before setupRoutes())
+function requiresAuth(req, res, next) {
+  if (!req.oidc || !req.oidc.isAuthenticated()) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  next();
+}
+
 function setupRoutes() {
   const baseLlmPath = '/my-llp-endpoint';
+
+  // Auth middleware for base routes
+  app.use(auth(auth0Config));
 
   // Define a route
   app.get('/', (req, res) => {
@@ -133,7 +240,6 @@ function setupRoutes() {
     
     const idToken = req.oidc.idToken;
     
-    //console.log('   !T! req.oidc.idToken (/loginn)', req.oidc.idToken);
     console.log('   !T! req.oidc.idToken (/my_login):', req.oidc.idToken);
     
     //const accessToken = req.oidc.access_token;
@@ -157,8 +263,7 @@ function setupRoutes() {
     // gpt: "Ensure that the returnTo URL is exactly the same as the callback URL expected by the server."????
     //const returnUrl = 'http://localhost:' + PORT;
     
-    //const returnUrl = 'http://localhost:5222?id_token=' + idToken;
-    //const returnUrl = 'http://localhost:5222?access_token=' + accessToken;
+    //const returnUrl = 'http://localhost:5222?id_token=' + idToken;    
     const returnUrl = 'http://localhost:5222?id_token=' + idToken + '&access_token=' + accessToken;
     
     console.log('   returnUrl: ' + returnUrl + '');
@@ -224,11 +329,15 @@ function setupRoutes() {
   // Use Post instead of Get (both in client and in server)
   // (F, gpt/claude) For reasons of Data length, Special characters & Security
   // Also ensure route below matches exactly with my (unity) client's endpoint
-  app.post(`${baseLlmPath}/completions`, handleCompletionRequest);
-
+  //app.post(`${baseLlmPath}/completions`, auth({...config, authRequired: true}), handleCompletionRequest);
+  //app.post(`${baseLlmPath}/completions`, requiresAuth, handleCompletionRequest); // with custom authorization protection
+  app.post(`${baseLlmPath}/completions`, validateJwtMiddleware, handleCompletionRequest);
 
   // For fetching available models
-  app.get(`${baseLlmPath}/available-models`, handleAvailableModelsRequest);  
+  //app.get(`${baseLlmPath}/available-models`, handleAvailableModelsRequest);
+  app.get(`${baseLlmPath}/available-models`, requiresAuth, handleAvailableModelsRequest); // with custom authorization protection
+
+
   app.use(errorHandler);
 }
 
@@ -266,9 +375,24 @@ async function handleAvailableModelsRequest(req, res, next) {
 }
 
 async function handleCompletionRequest(req, res, next) { // Error handling as per Fer's system -"Next"- (1/3)
+  // Authorization check
+  const isAuthorized = req.user && req.user.permissions && 
+    req.user.permissions.includes('request:llm');
+  console.log(`User authorization status: ${isAuthorized}`);
+  
+
+  // Check removed while wswitching to JWT validation instead
+  // if (!req.oidc.isAuthenticated()) {
+  //   return res.status(401).json({ error: 'Not authenticated' });  
+  // }
+
+
   console.log("");
-  console.log("---------------------------------");
-          
+  console.log("---------------------------------");          
+   
+  // Auth verification logging
+  console.log("## Auth status: ", req.oidc.isAuthenticated() ? "Authenticated" : "Not authenticated");  
+
   console.log("## req received: -------------------");
   
   console.log("## req: " + req);
@@ -276,11 +400,10 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
   ////////////console.log("** req.oidc (stringified): " + JSON.parse(req.oidcr));
   console.log("Processing request (handleCompletionRequest)");
 
-
-
   const authHeader = req.headers.authorization;
   
-  // Add detailed auth header logging
+
+  // Detailed auth header logging
   console.log("CC Auth header present:", !!authHeader);
   console.log("CC Auth header starts with 'Bearer':", authHeader?.startsWith('Bearer '));
     
@@ -301,8 +424,6 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
   console.log("CC Full token: '" + token + "'");
 
 
-
-  //console.log("## req.body - messages: " + JSON.stringify(req.body.Messages));
   console.log("## req.body - messages (" + req.body.Messages.length + "): ");
   for (const message of req.body.Messages) {    
     console.log(`    -${message.Role}: "${message.Content}"`);
@@ -319,8 +440,6 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
   console.log("** !T! req.oidc.idToken (handleCompletionRequest):", req.oidc.idToken);
   console.log('   Request headers (handleCompletionRequest):', req.headers);  
   console.log("---------------------------------");
-
-
 
 
   try {    
@@ -391,6 +510,7 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
     // Signals Express that an error occurred.
     // (Express will then invoke the appropriate error-handling middleware
     // when finished with the current middleware stack).
+    console.log("Error sent to Unity (from handleCompletionRequest: '" + error + "'");
     next(error);
   }
 }
