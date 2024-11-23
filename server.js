@@ -35,6 +35,7 @@ const auth0Config = {
     //response_type: 'code id_token token',
 
     //scope: 'openid profile email'
+    
     //scope: 'openid profile email api:access'
     scope: 'openid profile email'
   },
@@ -170,7 +171,14 @@ function validateJwtMiddleware(req, res, next) {
     if (err) {
       console.log("Token verification error:", err);
       console.log("Error sent to Unity (from validateJwtMiddleware: '" + err + "'");
-      return res.status(401).json({ error: `Invalid token (${err})` });
+      //return res.status(401).json({ error: `Invalid token (${err})` });
+      return res.status(401).json({
+        
+        //error: `Invalid token (${err})`        
+        error: `Authentication failed`,
+        details: err.message
+
+      });
     }
     req.user = decoded;
     console.log("Token verification successful!");
@@ -378,10 +386,12 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
   // Authorization check
   const isAuthorized = req.user && req.user.permissions && 
     req.user.permissions.includes('request:llm');
-  console.log(`User authorization status: ${isAuthorized}`);
+  console.log(`User authorization status (1): ${isAuthorized}`);
   
+  const isAuthorized2 = req.user && req.user.permissions;
+  console.log(`User authorization status (2):`, isAuthorized2);
 
-  // Check removed while wswitching to JWT validation instead
+  // Check removed, as JWT validation succeeded (while switched to JWT validation instead)
   // if (!req.oidc.isAuthenticated()) {
   //   return res.status(401).json({ error: 'Not authenticated' });  
   // }
@@ -398,6 +408,8 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
   console.log("## req: " + req);
   /////////////console.log("** req (stringified): " + JSON.parse(req));
   ////////////console.log("** req.oidc (stringified): " + JSON.parse(req.oidcr));
+  
+  console.log("Processing authenticated request for user:", req.user.email);
   console.log("Processing request (handleCompletionRequest)");
 
   const authHeader = req.headers.authorization;
