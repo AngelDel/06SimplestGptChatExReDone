@@ -6,8 +6,11 @@ const cors = require('cors'); // Import cors package
 const fs = require('fs');
 const LLP_PROVIDERS = require('./llpProviders'); // for which AI provider used
 const axios = require('axios'); // Used to make HTTP requests to Auth0
-const jwt = require('jsonwebtoken');
-const jwks = require('jwks-rsa');
+
+// jwt/jwks imports replaced with new Auth0-specific middleware (mentioned when you create a new Auth0 API))
+//const jwt = require('jsonwebtoken');
+//const jwks = require('jwks-rsa');
+const { auth: validateAuth } = require('express-oauth2-jwt-bearer');
 
 // Fix for "session is not defined" error
 const { auth } = require('express-openid-connect');
@@ -40,6 +43,31 @@ const auth0Config = {
     scope: 'openid profile email'
   },
 };
+
+// Temp - Still getting the encrypted token even with the new API configuration?
+app.use((req, res, next) => {
+  if (req.headers.authorization) {
+      console.log("Incoming token structure:");
+      const token = req.headers.authorization.split(' ')[1];
+      console.log("- Parts:", token.split('.').length);
+      console.log("- Starts with:", token.substring(0, 30));
+
+      console.log("=== TOKEN FLOW ANALYSIS - SERVER MIDDLEWARE ===");      
+        console.log("Token at middleware entry:");
+        console.log("- Parts:", token.split('.').length);
+        console.log("- Header:", token.split('.')[0]);
+        console.log("- First part decoded:", 
+            Buffer.from(token.split('.')[0], 'base64').toString());
+  }
+  next();
+});
+
+// A: This needs to stay here, before setupRoutes(), where it is used... but also before MAIN EXECUTIOn , for some reason
+const validateJwtMiddleware = validateAuth({
+  audience: process.env.AUTH0_AUDIENCE,
+  issuerBaseURL: `https://${process.env.AUTH0_DOMAIN}/`,
+  tokenSigningAlg: 'RS256'
+});
 
 // 3. MAIN EXECUTION
 console.log(`Hello from the server`); // Executed when the file is first run
@@ -83,108 +111,6 @@ function setupMiddleware() {
   
   // Serve static files from the app directory
   app.use(express.static(path.join(__dirname, 'app')));
-}
-
-function validateJwtMiddleware(req, res, next) {
-  const authHeader = req.headers.authorization;
-  console.log("Auth header:", authHeader);
-  
-
-
-
-
-  // Inspect claims in the token
-  const tokenPrev = authHeader.split(' ')[1];
-
-  // Token decoding to inspect claims
-  try {
-    const decodedToken = jwt.decode(tokenPrev, {complete: true});
-    console.log("Decoded token header:", decodedToken.header);
-    console.log("Decoded token payload:", decodedToken.payload);
-    console.log("Token aud:", decodedToken.payload.aud);
-    console.log("Token iss:", decodedToken.payload.iss);
-  } catch (err) {
-    console.log("Error decoding token:", err);
-  }
-
-
-
-
-
-  if (!authHeader?.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Missing or malformed Authorization header' });
-  }
-
-  const jwksClient = jwks({
-    jwksUri: `${process.env.AUTH0_DOMAIN}/.well-known/jwks.json`,
-    cache: true,
-    rateLimit: true,
-    requestHeaders: {}, // Eempty headers object
-    timeout: 30000 // Increase timeout
-  });  
-  console.log(`JWKS URI: ${process.env.AUTH0_DOMAIN}/.well-known/jwks.json`); // Debug logging for the above
-
-  if (authHeader) {
-     const token = authHeader.split(' ')[1];
-     console.log("Token structure:");
-     console.log("- Parts:", token.split('.').length);
-     console.log("- First part:", token.substring(0, 30));
-  }
-
-  const getKey = (header, callback) => {
-    jwksClient.getSigningKey(header.kid, (err, key) => {
-      if (err) {
-        return callback(err);
-      }
-      const signingKey = key.publicKey || key.rsaPublicKey;
-      callback(null, signingKey);
-    });
-  };
-
-
-  // More detailed logging:
-  // Show what we're actually checking against
-  console.log("Validating with:");
-  console.log("- issuer:", `${process.env.AUTH0_DOMAIN}/`);
-  //console.log("Expected audience:", process.env.AUTH0_AUDIENCE);
-  console.log("- audience:", process.env.AUTH0_CLIENT_ID); // temp to use with id_token used as access_token!!!!!!!!!!!!!!!!
-
-
-  const token = authHeader.split(' ')[1];
-
-  jwt.verify(token, getKey, {
-    algorithms: ['RS256'],
-
-
-    //issuer: `https://${process.env.AUTH0_DOMAIN}/`,
-    
-
-    issuer: `${process.env.AUTH0_DOMAIN}/`,
-    
-    //audience: process.env.AUTH0_AUDIENCE
-    audience: process.env.AUTH0_CLIENT_ID // temp to use with id_token used as access_token!!!!!!!!!!!!!!!!
-
-    //issuer: `${process.env.AUTH0_DOMAIN}/`
-
-
-  }, (err, decoded) => {
-    if (err) {
-      console.log("Token verification error:", err);
-      console.log("Error sent to Unity (from validateJwtMiddleware: '" + err + "'");
-      //return res.status(401).json({ error: `Invalid token (${err})` });
-      return res.status(401).json({
-        
-        //error: `Invalid token (${err})`        
-        error: `Authentication failed`,
-        details: err.message
-
-      });
-    }
-    req.user = decoded;
-    console.log("Token verification successful!");
-    console.log("Decoded user:", decoded);
-    next();
-  });
 }
 
 // CORS (2/2)
@@ -343,7 +269,8 @@ function setupRoutes() {
 
   // For fetching available models
   //app.get(`${baseLlmPath}/available-models`, handleAvailableModelsRequest);
-  app.get(`${baseLlmPath}/available-models`, requiresAuth, handleAvailableModelsRequest); // with custom authorization protection
+  //app.get(`${baseLlmPath}/available-models`, requiresAuth, handleAvailableModelsRequest); // with custom authorization protection
+  app.get(`${baseLlmPath}/available-models`, validateJwtMiddleware, handleAvailableModelsRequest);
 
 
   app.use(errorHandler);
@@ -383,13 +310,14 @@ async function handleAvailableModelsRequest(req, res, next) {
 }
 
 async function handleCompletionRequest(req, res, next) { // Error handling as per Fer's system -"Next"- (1/3)
-  // Authorization check
-  const isAuthorized = req.user && req.user.permissions && 
-    req.user.permissions.includes('request:llm');
-  console.log(`User authorization status (1): ${isAuthorized}`);
   
-  const isAuthorized2 = req.user && req.user.permissions;
-  console.log(`User authorization status (2):`, isAuthorized2);
+  // Old authorization check
+  // const isAuthorized = req.user && req.user.permissions && 
+  //   req.user.permissions.includes('request:llm');
+  // console.log(`User authorization status (1): ${isAuthorized}`);
+  
+  // const isAuthorized2 = req.user && req.user.permissions;
+  // console.log(`User authorization status (2):`, isAuthorized2);
 
   // Check removed, as JWT validation succeeded (while switched to JWT validation instead)
   // if (!req.oidc.isAuthenticated()) {
@@ -409,12 +337,11 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
   /////////////console.log("** req (stringified): " + JSON.parse(req));
   ////////////console.log("** req.oidc (stringified): " + JSON.parse(req.oidcr));
   
-  console.log("Processing authenticated request for user:", req.user.email);
+  //console.log("Processing authenticated request for user:", req.user.email);
   console.log("Processing request (handleCompletionRequest)");
 
   const authHeader = req.headers.authorization;
   
-
   // Detailed auth header logging
   console.log("CC Auth header present:", !!authHeader);
   console.log("CC Auth header starts with 'Bearer':", authHeader?.startsWith('Bearer '));
