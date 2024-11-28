@@ -45,22 +45,22 @@ const auth0Config = {
 };
 
 // Temp - Still getting the encrypted token even with the new API configuration?
-app.use((req, res, next) => {
-  if (req.headers.authorization) {
-      // console.log("Incoming token structure:");
-      const token = req.headers.authorization.split(' ')[1];
-      // console.log("- Parts:", token.split('.').length);
-      // console.log("- Starts with:", token.substring(0, 30));
+// app.use((req, res, next) => {
+//   if (req.headers.authorization) {
+//       // console.log("Incoming token structure:");
+//       const token = req.headers.authorization.split(' ')[1];
+//       // console.log("- Parts:", token.split('.').length);
+//       // console.log("- Starts with:", token.substring(0, 30));
 
-      // console.log("=== TOKEN FLOW ANALYSIS - SERVER MIDDLEWARE ===");      
-      //   console.log("Token at middleware entry:");
-      //   console.log("- Parts:", token.split('.').length);
-      //   console.log("- Header:", token.split('.')[0]);
-      //   console.log("- First part decoded:", 
-      //       Buffer.from(token.split('.')[0], 'base64').toString());
-  }
-  next();
-});
+//       // console.log("=== TOKEN FLOW ANALYSIS - SERVER MIDDLEWARE ===");      
+//       //   console.log("Token at middleware entry:");
+//       //   console.log("- Parts:", token.split('.').length);
+//       //   console.log("- Header:", token.split('.')[0]);
+//       //   console.log("- First part decoded:", 
+//       //       Buffer.from(token.split('.')[0], 'base64').toString());
+//   }
+//   next();
+// });
 
 // A: This needs to stay here, before setupRoutes(), where it is used... but also before MAIN EXECUTIOn , for some reason
 const validateJwtMiddleware = validateAuth({
