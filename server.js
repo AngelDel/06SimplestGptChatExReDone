@@ -47,17 +47,17 @@ const auth0Config = {
 // Temp - Still getting the encrypted token even with the new API configuration?
 app.use((req, res, next) => {
   if (req.headers.authorization) {
-      console.log("Incoming token structure:");
+      // console.log("Incoming token structure:");
       const token = req.headers.authorization.split(' ')[1];
-      console.log("- Parts:", token.split('.').length);
-      console.log("- Starts with:", token.substring(0, 30));
+      // console.log("- Parts:", token.split('.').length);
+      // console.log("- Starts with:", token.substring(0, 30));
 
-      console.log("=== TOKEN FLOW ANALYSIS - SERVER MIDDLEWARE ===");      
-        console.log("Token at middleware entry:");
-        console.log("- Parts:", token.split('.').length);
-        console.log("- Header:", token.split('.')[0]);
-        console.log("- First part decoded:", 
-            Buffer.from(token.split('.')[0], 'base64').toString());
+      // console.log("=== TOKEN FLOW ANALYSIS - SERVER MIDDLEWARE ===");      
+      //   console.log("Token at middleware entry:");
+      //   console.log("- Parts:", token.split('.').length);
+      //   console.log("- Header:", token.split('.')[0]);
+      //   console.log("- First part decoded:", 
+      //       Buffer.from(token.split('.')[0], 'base64').toString());
   }
   next();
 });
@@ -147,7 +147,7 @@ function setupRoutes() {
   // Test route
   // will return the user's profile information when they log in
   app.get('/profile', (req, res) => {
-    console.log("# endpoint '/profile'");
+    console.log("\n# endpoint '/profile'");
     //console.log('Request headers (/profile):', req.headers);    
     console.log('   !T! req.oidc.idToken (/profile):', req.oidc.idToken);  
     console.log('   req.oidc.user (/profile):', req.oidc.user); 
@@ -168,7 +168,7 @@ function setupRoutes() {
   // This line sets up what happens when the server gets a request to the '/my_login' URL.
   // When someone tries to visit the '/my_login' URL, this is the starting point for logging them in.
   app.get('/my_login', (req, res) => {
-    console.log("### 3 (endpoint '/my_login') Initiating login process");
+    console.log("\n### 3 (endpoint '/my_login') Initiating login process");
     
     console.log('   req.oidc object:', JSON.stringify(req.oidc, null, 2));
     
@@ -200,7 +200,7 @@ function setupRoutes() {
     //const returnUrl = 'http://localhost:5222?id_token=' + idToken;    
     const returnUrl = 'http://localhost:5222?id_token=' + idToken + '&access_token=' + accessToken;
     
-    console.log('   returnUrl: ' + returnUrl + '');
+    //console.log('   returnUrl: ' + returnUrl + '');
 
     console.log("# end 3 (my_login)");
 
@@ -311,6 +311,9 @@ async function handleAvailableModelsRequest(req, res, next) {
 
 async function handleCompletionRequest(req, res, next) { // Error handling as per Fer's system -"Next"- (1/3)
   
+  console.log("\n=== LLM API Request ===");   
+  
+
   // Old authorization check
   // const isAuthorized = req.user && req.user.permissions && 
   //   req.user.permissions.includes('request:llm');
@@ -329,56 +332,84 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
   console.log("---------------------------------");          
    
   // Auth verification logging
-  console.log("## Auth status: ", req.oidc.isAuthenticated() ? "Authenticated" : "Not authenticated");  
+  // console.log("## Auth status: ", req.oidc.isAuthenticated() ? "Authenticated" : "Not authenticated");  
 
-  console.log("## req received: -------------------");
+  // console.log("## req received: -------------------");
   
-  console.log("## req: " + req);
-  /////////////console.log("** req (stringified): " + JSON.parse(req));
-  ////////////console.log("** req.oidc (stringified): " + JSON.parse(req.oidcr));
+  // console.log("## req: " + req);
+  // /////////////console.log("** req (stringified): " + JSON.parse(req));
+  // ////////////console.log("** req.oidc (stringified): " + JSON.parse(req.oidcr));
   
-  //console.log("Processing authenticated request for user:", req.user.email);
-  console.log("Processing request (handleCompletionRequest)");
+  // //console.log("Processing authenticated request for user:", req.user.email);
+  // console.log("Processing request (handleCompletionRequest)");
 
   const authHeader = req.headers.authorization;
   
   // Detailed auth header logging
-  console.log("CC Auth header present:", !!authHeader);
-  console.log("CC Auth header starts with 'Bearer':", authHeader?.startsWith('Bearer '));
+  console.log("Auth header present:", !!authHeader);
+  console.log("Auth header starts with 'Bearer':", authHeader?.startsWith('Bearer '));
     
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Missing or malformed Authorization header' });
   }
 
-  const token = authHeader.split(' ')[1];
+
+
+  const tokenPrev = authHeader.split(' ')[1];
   
-  // Token format check
-  console.log("CC Received token structure:");
-  console.log("CC - Parts count:", token.split('.').Length);
-  console.log("CC - Each part length:");
-  token.split('.').forEach((part, index) => {
-    console.log(`  Part ${index}: ${part.length} characters`);
-  });  
-  console.log("CC Token first chars:", token.substring(0, 20) + "...");
-  console.log("CC Full token: '" + token + "'");
 
 
-  console.log("## req.body - messages (" + req.body.Messages.length + "): ");
-  for (const message of req.body.Messages) {    
-    console.log(`    -${message.Role}: "${message.Content}"`);
+  // New JWT token details logging
+  const token = req.headers.authorization?.split(' ')[1];
+  if (token) {
+      const tokenParts = token.split('.');
+      console.log("Token info:");
+      console.log(`- Type: Client Credentials JWT`);
+      console.log(`- Parts: ${tokenParts.length}`);
+      try {
+          const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+          console.log(`- Client ID: ${payload.sub}`);
+          console.log(`- Audience: ${payload.aud}`);
+      } catch (e) {
+          console.log("Error decoding token payload");
+      }
   }
 
-  console.log("## req.body - sPlatformSentFrom: " + req.body.SPlatformSentFrom);
-  console.log("## req.body - llp provider: " + req.body.SLlpProvider);
-  console.log("## req.body - temperature: " + req.body.Temperature);
-  console.log("## req.body - model: " + req.body.Model);
-  console.log("---------------------------------");
+  // Request details
+  console.log("\nRequest details:");
+  console.log(`Messages: ${req.body.Messages.length}`);
+  console.log(`Model: ${req.body.Model}`);
+  console.log(`Provider: ${req.body.SLlpProvider}`);
+
+
+
+  // Token format check
+  // console.log("Received token structure:");
+  // console.log("Parts count:", token.split('.').Length);
+  // console.log("Each part length:");
+  // token.split('.').forEach((part, index) => {
+  //   console.log(`  Part ${index}: ${part.length} characters`);
+  // });  
+  // console.log("CC Token first chars:", token.substring(0, 20) + "...");
+  // console.log("CC Full token: '" + token + "'");
+
+
+  // console.log("## req.body - messages (" + req.body.Messages.length + "): ");
+  // for (const message of req.body.Messages) {    
+  //   console.log(`    -${message.Role}: "${message.Content}"`);
+  // }
+
+  // console.log("## req.body - sPlatformSentFrom: " + req.body.SPlatformSentFrom);
+  // console.log("## req.body - llp provider: " + req.body.SLlpProvider);
+  // console.log("## req.body - temperature: " + req.body.Temperature);
+  // console.log("## req.body - model: " + req.body.Model);
+  // console.log("---------------------------------");
   
-  console.log("** req.oidc.user (stringified): " + JSON.stringify(req.oidc.user));  
-  console.log("** req.oidc.isAuthenticated()?????????????: " + req.oidc.isAuthenticated());
-  console.log("** !T! req.oidc.idToken (handleCompletionRequest):", req.oidc.idToken);
-  console.log('   Request headers (handleCompletionRequest):', req.headers);  
-  console.log("---------------------------------");
+  // console.log("** req.oidc.user (stringified): " + JSON.stringify(req.oidc.user));  
+  // console.log("** req.oidc.isAuthenticated()?????????????: " + req.oidc.isAuthenticated());
+  // console.log("** !T! req.oidc.idToken (handleCompletionRequest):", req.oidc.idToken);
+  // console.log('   Request headers (handleCompletionRequest):', req.headers);  
+  // console.log("---------------------------------");
 
 
   try {    
@@ -435,8 +466,7 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
           console.log("$$ response: -----------------------");
           //console.log("Raw JSON response from my server (and Open AI): " + JSON.stringify(llpResponse, null, 2));
           console.log("$$ message content from this server (and Open AI): '" + llpResponse.choices[0].message.content);
-          console.log("---------------------------------");
-          console.log("");
+          console.log("---------------------------------");          
           break;
       default: // Handle unknown platform                    
           const validationError = new Error('LLP provider not recognised');
@@ -452,6 +482,8 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
     console.log("Error sent to Unity (from handleCompletionRequest: '" + error + "'");
     next(error);
   }
+
+  console.log("\n=== end LLM API Request ===");   
 }
 
 // Extract env variables (eg: Open AI api key) from their files
