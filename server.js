@@ -339,161 +339,115 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
           detail: 'Missing required permission: request:llm'
       });
   }
+  // A: Authenticated AND authorized to make the LLM request!
+  else {
+    console.log("");
+    console.log("---------------------------------");          
 
-
-  console.log("");
-  console.log("---------------------------------");          
-   
-  // Auth verification logging
-  // console.log("## Auth status: ", req.oidc.isAuthenticated() ? "Authenticated" : "Not authenticated");  
-
-  // console.log("## req received: -------------------");
-  
-  // console.log("## req: " + req);
-  // /////////////console.log("** req (stringified): " + JSON.parse(req));
-  // ////////////console.log("** req.oidc (stringified): " + JSON.parse(req.oidcr));
-  
-  // //console.log("Processing authenticated request for user:", req.user.email);
-  // console.log("Processing request (handleCompletionRequest)");
-
-  const authHeader = req.headers.authorization;
-  
-  // Detailed auth header logging
-  console.log("Auth header present:", !!authHeader);
-  console.log("Auth header starts with 'Bearer':", authHeader?.startsWith('Bearer '));
+    const authHeader = req.headers.authorization;
     
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Missing or malformed Authorization header' });
-  }
-
-
-
-  const tokenPrev = authHeader.split(' ')[1];
-  
-
-
-  // New JWT token details logging
-  const token = req.headers.authorization?.split(' ')[1];
-  if (token) {
-      const tokenParts = token.split('.');
-      console.log("Token info:");
-      console.log(`- Type: Client Credentials JWT`);
-      console.log(`- Parts: ${tokenParts.length}`);
-      try {
-          const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
-          console.log(`- Client ID: ${payload.sub}`);
-          console.log(`- Audience: ${payload.aud}`);
-      } catch (e) {
-          console.log("Error decoding token payload");
-      }
-  }
-
-  // Request details
-  console.log("\nRequest details:");
-  console.log(`Messages: ${req.body.Messages.length}`);
-  console.log(`Model: ${req.body.Model}`);
-  console.log(`Provider: ${req.body.SLlpProvider}`);
-
-
-
-  // Token format check
-  // console.log("Received token structure:");
-  // console.log("Parts count:", token.split('.').Length);
-  // console.log("Each part length:");
-  // token.split('.').forEach((part, index) => {
-  //   console.log(`  Part ${index}: ${part.length} characters`);
-  // });  
-  // console.log("CC Token first chars:", token.substring(0, 20) + "...");
-  // console.log("CC Full token: '" + token + "'");
-
-
-  // console.log("## req.body - messages (" + req.body.Messages.length + "): ");
-  // for (const message of req.body.Messages) {    
-  //   console.log(`    -${message.Role}: "${message.Content}"`);
-  // }
-
-  // console.log("## req.body - sPlatformSentFrom: " + req.body.SPlatformSentFrom);
-  // console.log("## req.body - llp provider: " + req.body.SLlpProvider);
-  // console.log("## req.body - temperature: " + req.body.Temperature);
-  // console.log("## req.body - model: " + req.body.Model);
-  // console.log("---------------------------------");
-  
-  // console.log("** req.oidc.user (stringified): " + JSON.stringify(req.oidc.user));  
-  // console.log("** req.oidc.isAuthenticated()?????????????: " + req.oidc.isAuthenticated());
-  // console.log("** !T! req.oidc.idToken (handleCompletionRequest):", req.oidc.idToken);
-  // console.log('   Request headers (handleCompletionRequest):', req.headers);  
-  // console.log("---------------------------------");
-
-
-  try {    
-    const allMyMessagesInLlpConversation = req.body.Messages; // Access message from request body
-    const llpProvider = req.body.SLlpProvider;
-    const myTemperature = req.body.Temperature;
-    const myModel = req.body.Model;
-
-    // Error handling
-    // May also send an error message to client    
-
-    // Validation for message array
-    if (!allMyMessagesInLlpConversation || !Array.isArray(allMyMessagesInLlpConversation) || allMyMessagesInLlpConversation.length === 0) {
-      // message missing    
-      const validationError = new Error('No valid messages array provided in the request body');
-      validationError.status = 400;
-      throw validationError;
+    // Detailed auth header logging
+    console.log("Auth header present:", !!authHeader);
+    console.log("Auth header starts with 'Bearer':", authHeader?.startsWith('Bearer '));
+      
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing or malformed Authorization header' });
     }
 
-    // Validation for each message object
-    for (const message of allMyMessagesInLlpConversation) {
-      if (!message.Role || typeof message.Role !== 'string') {
-        const validationError = new Error('Invalid or missing role property in message object');
+    const tokenPrev = authHeader.split(' ')[1];
+
+    // New JWT token details logging
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+        const tokenParts = token.split('.');
+        console.log("Token info:");
+        console.log(`- Type: Client Credentials JWT`);
+        console.log(`- Parts: ${tokenParts.length}`);
+        try {
+            const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+            console.log(`- Client ID: ${payload.sub}`);
+            console.log(`- Audience: ${payload.aud}`);
+        } catch (e) {
+            console.log("Error decoding token payload");
+        }
+    }
+
+    // Request details
+    console.log("\nRequest details:");
+    console.log(`Messages: ${req.body.Messages.length}`);
+    console.log(`Model: ${req.body.Model}`);
+    console.log(`Provider: ${req.body.SLlpProvider}`);
+
+    try {    
+      const allMyMessagesInLlpConversation = req.body.Messages; // Access message from request body
+      const llpProvider = req.body.SLlpProvider;
+      const myTemperature = req.body.Temperature;
+      const myModel = req.body.Model;
+
+      // Error handling
+      // May also send an error message to client    
+
+      // Validation for message array
+      if (!allMyMessagesInLlpConversation || !Array.isArray(allMyMessagesInLlpConversation) || allMyMessagesInLlpConversation.length === 0) {
+        // message missing    
+        const validationError = new Error('No valid messages array provided in the request body');
         validationError.status = 400;
         throw validationError;
       }
-      if (!message.Content || typeof message.Content !== 'string') {
-        const validationError = new Error('Invalid or missing content property in message object');
-        validationError.status = 400;
-        throw validationError;
-      }
-    }
 
-    if (!llpProvider) {
-      // llp provider missing    
-      const validationError = new Error('No llp provider given in the request body');
-      validationError.status = 400;
-      throw validationError;
-    }
-
-    if (!myModel) {
-      // model missing    
-      const validationError = new Error('No model provided in the request body');
-      validationError.status = 400;
-      throw validationError;
-    }    
-
-    let llpResponse = "";
-    
-    switch (llpProvider) {
-      case LLP_PROVIDERS.OPEN_AI:          
-          llpResponse = await _callOpenAI(allMyMessagesInLlpConversation, myTemperature, myModel);
-
-          console.log("$$ response: -----------------------");
-          //console.log("Raw JSON response from my server (and Open AI): " + JSON.stringify(llpResponse, null, 2));
-          console.log("$$ message content from this server (and Open AI): '" + llpResponse.choices[0].message.content);
-          console.log("---------------------------------");          
-          break;
-      default: // Handle unknown platform                    
-          const validationError = new Error('LLP provider not recognised');
+      // Validation for each message object
+      for (const message of allMyMessagesInLlpConversation) {
+        if (!message.Role || typeof message.Role !== 'string') {
+          const validationError = new Error('Invalid or missing role property in message object');
           validationError.status = 400;
           throw validationError;
-    }
-    res.send(llpResponse); // Send the response to the client
+        }
+        if (!message.Content || typeof message.Content !== 'string') {
+          const validationError = new Error('Invalid or missing content property in message object');
+          validationError.status = 400;
+          throw validationError;
+        }
+      }
 
-  } catch (error) { // Error handling as per Fer's system (2/3)
-    // Signals Express that an error occurred.
-    // (Express will then invoke the appropriate error-handling middleware
-    // when finished with the current middleware stack).
-    console.log("Error sent to Unity (from handleCompletionRequest: '" + error + "'");
-    next(error);
+      if (!llpProvider) {
+        // llp provider missing    
+        const validationError = new Error('No llp provider given in the request body');
+        validationError.status = 400;
+        throw validationError;
+      }
+
+      if (!myModel) {
+        // model missing    
+        const validationError = new Error('No model provided in the request body');
+        validationError.status = 400;
+        throw validationError;
+      }    
+
+      let llpResponse = "";
+      
+      switch (llpProvider) {
+        case LLP_PROVIDERS.OPEN_AI:          
+            llpResponse = await _callOpenAI(allMyMessagesInLlpConversation, myTemperature, myModel);
+
+            console.log("$$ response: -----------------------");
+            //console.log("Raw JSON response from my server (and Open AI): " + JSON.stringify(llpResponse, null, 2));
+            console.log("$$ message content from this server (and Open AI): '" + llpResponse.choices[0].message.content);
+            console.log("---------------------------------");          
+            break;
+        default: // Handle unknown platform                    
+            const validationError = new Error('LLP provider not recognised');
+            validationError.status = 400;
+            throw validationError;
+      }
+      res.send(llpResponse); // Send the response to the client
+
+    } catch (error) { // Error handling as per Fer's system (2/3)
+      // Signals Express that an error occurred.
+      // (Express will then invoke the appropriate error-handling middleware
+      // when finished with the current middleware stack).
+      console.log("Error sent to Unity (from handleCompletionRequest: '" + error + "'");
+      next(error);
+    }
   }
 
   console.log("\n=== end LLM API Request ===");   
