@@ -313,19 +313,32 @@ async function handleCompletionRequest(req, res, next) { // Error handling as pe
   
   console.log("\n=== LLM API Request ===");   
   
+  // Authorization status check
+  console.log("\nAuthorization Check:");
+  if (!req.auth) {
+      console.log("❌  Request not authenticated - no auth info");
+      return res.status(401).json({ error: 'Not authenticated' });
+  } else {
+    console.log("✔️  Request authenticated");
+  }
 
-  // Old authorization check
-  // const isAuthorized = req.user && req.user.permissions && 
-  //   req.user.permissions.includes('request:llm');
-  // console.log(`User authorization status (1): ${isAuthorized}`);
+  // Direct access to payload scope:
+  // Claude: access  scope directly from payload instead of relying on middleware's processing
+  // (A: which doesn't seem to work)
+  const payloadScope = req.auth.payload.scope || '';  
+  const scopes = payloadScope.split(' ');  
+  console.log("Token payload scope:", payloadScope);
+  console.log("Parsed scopes:", scopes);  
+
+  const canAccessLlm = scopes.includes('request:llm');
+  console.log(`Auth Status: ${canAccessLlm ? '✔️  Authorized for LLM' : '❌  Not authorized for LLM'}`);  
   
-  // const isAuthorized2 = req.user && req.user.permissions;
-  // console.log(`User authorization status (2):`, isAuthorized2);
-
-  // Check removed, as JWT validation succeeded (while switched to JWT validation instead)
-  // if (!req.oidc.isAuthenticated()) {
-  //   return res.status(401).json({ error: 'Not authenticated' });  
-  // }
+  if (!canAccessLlm) {
+      return res.status(403).json({ 
+          error: 'Not authorized for LLM access',
+          detail: 'Missing required permission: request:llm'
+      });
+  }
 
 
   console.log("");
