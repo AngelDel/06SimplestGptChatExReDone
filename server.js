@@ -46,7 +46,8 @@ const auth0Config = {
     //scope: 'openid profile email'
     
     //scope: 'openid profile email api:access'
-    scope: 'openid profile email'
+    scope: 'openid profile email request:llm', // LLM scope
+    audience: 'gpt api test' // My API identifier
   },
 };
 
