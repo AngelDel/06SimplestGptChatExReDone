@@ -1,3 +1,5 @@
+const util = require('util');
+
 // 1. IMPORT REQUIRED MODULES
 const express = require('express');
 const path = require('path'); // Added to handle file paths
@@ -6,6 +8,7 @@ const cors = require('cors'); // Import cors package
 const fs = require('fs');
 const LLP_PROVIDERS = require('./llpProviders'); // for which AI provider used
 const axios = require('axios'); // Used to make HTTP requests to Auth0
+const crypto = require('crypto'); // Because Auth0 uses PKCE flow (Proof Key for Code Exchange), which requires a code_verifier
 
 // jwt/jwks imports replaced with new Auth0-specific middleware (mentioned when you create a new Auth0 API))
 //const jwt = require('jsonwebtoken');
@@ -20,10 +23,12 @@ const session = require('express-session'); // manages user sessions and helps m
 const app = express(); // Create an instance of Express
 const PORT = process.env.PORT || 3000; // Define the port for the server to listen on 
 
+let pkceStore = {}; // Store PKCE values (in memory for now)
+
 // Auth0 config
 const auth0Config = {
   authRequired: false,
-  auth0Logout: true,
+  auth0Logout: true,  
   secret: process.env.SESSION_SECRET,
   baseURL: process.env.BASE_URL,
   clientID: process.env.AUTH0_CLIENT_ID,
@@ -33,9 +38,10 @@ const auth0Config = {
   //clientSecret: process.env.SESSION_SECRET, // no funciona con este
 
   authorizationParams: {
-    //response_type: 'token', // doesn't work, but sh b access token, acc to "https://community.auth0.com/t/id-token-not-present-in-tokenset-when-logging-in-with-passwordless-embedded-login-email-magic-link/137507"
-    response_type: 'code id_token',
+    //response_type: 'token', // doesn't work, but sh b access token, acc to "https://community.auth0.com/t/id-token-not-present-in-tokenset-when-logging-in-with-passwordless-embedded-login-email-magic-link/137507"    
     //response_type: 'code id_token token',
+    //response_type: 'code id_token',
+    response_type: 'code',
 
     //scope: 'openid profile email'
     
@@ -154,9 +160,20 @@ function setupRoutes() {
     //console.log('req.oidc.idTokenClaims:', req.oidc.idTokenClaims);
     console.log('   req.oidc.isAuthenticated (/profile):', req.oidc.isAuthenticated);
     if (req.oidc.isAuthenticated) console.log('      yes'); else console.log('      no');
+
     
-    const util = require('util');
-    console.log('   req.oidc complete object! (/profile):', util.inspect(req.oidc, { depth: null, showHidden: true }));
+
+    // Print the complete oidc object including the properties returned by getters
+    const oidcData = {
+      idToken: req.oidc.idToken,
+      refreshToken: req.oidc.refreshToken,
+      accessToken: req.oidc.accessToken,
+      idTokenClaims: req.oidc.idTokenClaims,
+      user: req.oidc.user
+    };    
+    console.log('! req.oidc complete object! (/profile):', util.inspect(oidcData, { depth: null, showHidden: true }));
+   
+
 
     console.log("#");
 
@@ -166,48 +183,116 @@ function setupRoutes() {
   // Login endpoint
   // initiates the Auth0 login process
   // This line sets up what happens when the server gets a request to the '/my_login' URL.
-  // When someone tries to visit the '/my_login' URL, this is the starting point for logging them in.
-  app.get('/my_login', (req, res) => {
-    console.log("\n### 3 (endpoint '/my_login') Initiating login process");
-    
-    console.log('   req.oidc object:', JSON.stringify(req.oidc, null, 2));
-    
-    const idToken = req.oidc.idToken;
-    
-    console.log('   !T! req.oidc.idToken (/my_login):', req.oidc.idToken);
-    
-    //const accessToken = req.oidc.access_token;
-    //////////////const accessToken = req.oidc.accessToken.access_token;    
-    let accessToken;
-    if (!req.oidc) {
-      console.log("req.oidc does not exist.");
-    } else if (!req.oidc.accessToken) {
-      console.log("req.oidc.accessToken does not exist.");
+  // When someone tries to visit the '/my_login' URL, this is the starting point for logging them in.    
+  // /my_login endpoint - STARTS the login process  
+  // NEW 12dec (1)
+  app.get('/my_login', async (req, res) => {
+    console.log("\n=== MY_LOGIN REQUEST ANALYSIS ===");
+    console.log("Is Auth Code present:", !!req.query.code);
+    console.log("Is State present:", !!req.query.state);
+    console.log("Is already authenticated:", !!req.oidc?.isAuthenticated());
+    console.log("Complete query:", req.query);
+
+    // Add oidc object inspection
+    if (req.oidc?.isAuthenticated()) {
+        console.log("Already authenticated, inspecting tokens:");
+        console.log("OIDC Object Keys:", Object.keys(req.oidc));
+        console.log("ID Token present:", !!req.oidc.idToken);
+        console.log("Access Token present:", !!req.oidc.accessToken);
+        console.log("Raw OIDC:", JSON.stringify(req.oidc, null, 2));
+        
+        // Use getter properties instead of direct access
+        const idToken = req.oidc?.idToken;
+        const accessToken = req.oidc?.accessToken?.access_token; // Extract actual token string from accessToken object
+                
+        console.log("Token extraction details:");
+        console.log("- ID Token present:", !!idToken);
+        console.log("- Access Token present:", !!accessToken);
+        
+        console.log("Extracted tokens:");
+        console.log("- ID Token:", idToken?.substring(0, 20) + "...");
+        console.log(`(Number of parts: ${ idToken.split(".").length })`);
+        
+        // Type check for accessToken (to avoid "accessToken?.substring is not a function" error if not a string)
+        if (typeof accessToken === 'string') {
+          console.log("- Access Token:", accessToken.substring(0, 20) + "...");
+          console.log(`(Number of parts: ${ accessToken.split(".").length })`);
+        } else {
+          console.log("- Access Token is not a string. Actual value:", accessToken);
+        }        
+
+        if (!idToken || !accessToken) {
+          console.log("Missing required tokens:", { idToken: !!idToken, accessToken: !!accessToken });
+          return res.status(400).send('Missing required tokens');
+        } 
+
+        const unityUrl = `http://localhost:5222?id_token=${idToken}&access_token=${accessToken}`;
+        //console.log("Unity redirect URL:", unityUrl);
+        console.log("Unity redirect URL (first 50 chars):", unityUrl.substring(0, 50) + "...");
+        return res.redirect(unityUrl);
     } else {
-      accessToken = req.oidc.accessToken.access_token;
+        console.log("\n=== STARTING NEW LOGIN ===");
+        const { verifier, challenge } = generatePKCE();
+        const state = crypto.randomBytes(16).toString('hex');
+        
+        console.log("Generated PKCE values:");
+        console.log("- State:", state);
+        console.log("- Challenge:", challenge);
+        
+        pkceStore[state] = verifier;
+        console.log("Stored verifier for state");
+
+        console.log("\n=== REDIRECTING TO AUTH0 ===");
+        const loginParams = { 
+            returnTo: `${process.env.BASE_URL}/my_login`,
+            authorizationParams: {
+                code_challenge: challenge,
+                code_challenge_method: 'S256',
+                state: state
+            }
+        };
+        console.log("Login params:", loginParams);
+        res.oidc.login(loginParams);
+    }
+  });
+
+  // /callback endpoint - HANDLES the response from Auth0
+  app.get('/callback', async (req, res) => {
+    console.log("### Callback endpoint reached");
+    console.log("Query parameters:", req.query);
+    
+    const code = req.query.code;
+    if (!code) {
+        console.log("No auth code received");
+        return res.status(400).send('No code received');
     }
 
-    console.log('   accessToken:', accessToken);
+    try {
+        const tokenResponse = await axios.post(`${process.env.AUTH0_ISSUER_BASE_URL}/oauth/token`, {
+            grant_type: 'authorization_code',
+            client_id: process.env.AUTH0_CLIENT_ID,
+            client_secret: process.env.AUTH0_CLIENT_SECRET,
+            code: code,
+            redirect_uri: `${process.env.BASE_URL}/callback`  // Must match the callback URL
+        });
 
-    console.log('   YA, PERO... Is authenticated?:', req.oidc.isAuthenticated());
+        console.log("Token exchange response:", tokenResponse.data);
+        const accessToken = tokenResponse.data.access_token;
+        const idToken = tokenResponse.data.id_token;
 
-    // The return URL (where the user goes after login) is built with their identity token included in the link.
-    // After the user logs in, they are sent to this URL along with their token for further processing.
-    
-    // gpt: "Ensure that the returnTo URL is exactly the same as the callback URL expected by the server."????
-    //const returnUrl = 'http://localhost:' + PORT;
-    
-    //const returnUrl = 'http://localhost:5222?id_token=' + idToken;    
-    const returnUrl = 'http://localhost:5222?id_token=' + idToken + '&access_token=' + accessToken;
-    
-    //console.log('   returnUrl: ' + returnUrl + '');
-
-    console.log("# end 3 (my_login)");
-
-    // This tells the server to log the user in and then send them to the link we created with their token.
-    // The server finishes logging the user in and sends them back to the app with their identity info (token).
-    res.oidc.login({ returnTo: returnUrl });
+        // Redirect back to Unity with tokens
+        const unityUrl = `http://localhost:5222?id_token=${idToken}&access_token=${accessToken}`;
+        res.redirect(unityUrl);
+    } catch (error) {
+        console.error('Token exchange error:', error.response?.data || error.message);
+        res.status(500).send('Token exchange failed');
+    }
   });
+  
+
+
+
+
 
   // Logout endpoint
   // handles user logout
@@ -539,4 +624,12 @@ async function _callOpenAI(allMyMessagesInLlpConversation, temperature, model) {
     console.error(error);
     throw new Error('Unable to process your request (2). Error: ' + JSON.stringify(error));
   }
+}
+
+function generatePKCE() {
+  const verifier = crypto.randomBytes(32).toString('base64url');
+  const challenge = crypto.createHash('sha256')
+      .update(verifier)
+      .digest('base64url');
+  return { verifier, challenge };
 }
